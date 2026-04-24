@@ -1,0 +1,40 @@
+# Local editor and workspace state
+.cursor/
+.idea/
+.vscode/
+*.user
+*.suo
+*.swp
+*.tmp
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Build outputs and caches
+build/
+dist/
+out/
+bin/
+obj/
+.cache/
+coverage/
+*.log
+*.obj
+*.o
+*.dll
+*.exe
+
+# Python / Node caches
+__pycache__/
+*.pyc
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

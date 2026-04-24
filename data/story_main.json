@@ -1,0 +1,1215 @@
+﻿{
+  "start_scene": "scene1_intro",
+  "scenes": [
+    {
+      "id": "scene1_intro",
+      "header": "场景1 / 成绩未出",
+      "mode": "interaction",
+      "background": "classroom_dusk",
+      "speaker": "旁白",
+      "text": "17:40，教室里明明还很亮，你却已经什么都不想做了。川哥进来，说成绩还没有完全出来，让大家再等一会儿。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene1_write",
+          "text": "尝试写作业",
+          "type": "choice",
+          "next": "scene1_feedback_write",
+          "set_bool": {
+            "rest_flag_scene1": false
+          }
+        },
+        {
+          "id": "scene1_sleep",
+          "text": "趴着睡觉",
+          "type": "choice",
+          "next": "scene1_feedback_sleep",
+          "set_bool": {
+            "rest_flag_scene1": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene1_feedback_write",
+      "header": "场景1 / 成绩未出",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你把作业本摊开了，却根本看不进去。笔尖在纸上停了半天，最后还是只剩下‘成绩什么时候出来’这一件事。",
+      "next": "scene2_waiting"
+    },
+    {
+      "id": "scene1_feedback_sleep",
+      "header": "场景1 / 成绩未出",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你把脸埋进臂弯里，想让自己先什么都别想。可脑子里还是乱的，根本睡不着，只能听见教室里那些断断续续的声音。",
+      "next": "scene2_waiting"
+    },
+    {
+      "id": "scene2_waiting",
+      "header": "场景2 / 第一波成绩公布",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "18:10，第一波成绩终于开始报了。前排有人坐直了，有人开始窃窃私语，而你只是下意识地等着自己的名字。",
+      "text_variants": [
+        {
+          "if_bool": {
+            "key": "rest_flag_scene1",
+            "value": true
+          },
+          "text": "18:10，第一波成绩终于开始报了。你刚才明明试过闭眼，却一点也没有轻松下来，现在只觉得那种等待更难熬了。"
+        }
+      ],
+      "next": "scene2_report"
+    },
+    {
+      "id": "scene2_report",
+      "header": "场景2 / 第一波成绩公布",
+      "mode": "dialogue",
+      "background": "classroom_dusk",
+      "speaker": "川哥",
+      "text": "他报了几个高分同学的名字，一个接一个，都没有你。成绩还没完全出完，可那种悬着的感觉已经慢慢发沉了。",
+      "next": "scene3_math_class"
+    },
+    {
+      "id": "scene3_math_class",
+      "header": "场景3 / 数学晚自习",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "18:20 到 19:30，数学老师在讲函数同构。你人坐在座位上，心却一直绕着成绩打转。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene3_listen",
+          "text": "尝试听课",
+          "type": "choice",
+          "next": "scene3_feedback_listen"
+        },
+        {
+          "id": "scene3_homework",
+          "text": "在课堂上写别的作业",
+          "type": "choice",
+          "next": "scene3_feedback_homework"
+        }
+      ]
+    },
+    {
+      "id": "scene3_feedback_listen",
+      "header": "场景3 / 数学晚自习",
+      "mode": "narration",
+      "background": "quiet_hallway",
+      "text": "你努力把注意力拉回黑板上，勉强听懂了一些，可那些内容刚进脑子里，就又被‘成绩到底怎么样’挤了出去。",
+      "next": "scene4_reveal"
+    },
+    {
+      "id": "scene3_feedback_homework",
+      "header": "场景3 / 数学晚自习",
+      "mode": "narration",
+      "background": "quiet_hallway",
+      "text": "你低头赶别的作业，勉强在下课前写完了一科。可函数同构那一整块还是空着，像你明知道之后得补上的一个洞。",
+      "next": "scene4_reveal"
+    },
+    {
+      "id": "scene4_reveal",
+      "header": "场景4 / 成绩揭晓",
+      "mode": "narration",
+      "background": "choice_focus",
+      "text": "19:30，第二波成绩终于报到了你。分数被念出来的那一刻，你先是没反应过来，接着整个人都像被猛地掏空了。",
+      "next": "scene5_stuck"
+    },
+    {
+      "id": "scene5_stuck",
+      "header": "场景5 / 停滞的自习",
+      "mode": "interaction",
+      "background": "classroom_dusk",
+      "speaker": "旁白",
+      "text": "19:40 到 20:20，老师让大家自己写数学作业。你看着函数同构那几道题，明明纸就在眼前，人却像彻底卡住了。",
+      "text_variants": [
+        {
+          "if_bool": {
+            "key": "rest_flag_scene1",
+            "value": true
+          },
+          "text": "19:40 到 20:20，老师让大家自己写数学作业。你之前就已经试过一次想让自己休息，可一点也没缓过来，现在整个人还是卡在题目前面。"
+        }
+      ],
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene5_work",
+          "text": "继续写作业",
+          "type": "choice",
+          "next": "scene5_feedback_work",
+          "set_bool": {
+            "rest_flag_scene5": false
+          }
+        },
+        {
+          "id": "scene5_sleep",
+          "text": "睡觉",
+          "type": "choice",
+          "next": "scene5_feedback_sleep",
+          "set_bool": {
+            "rest_flag_scene5": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene5_feedback_work",
+      "header": "场景5 / 停滞的自习",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你盯着题目发了很久的呆，一整节课过去，十多道题的作业居然只写出来一道。那种低落感慢慢从情绪变成了身体上的停滞。",
+      "next": "scene6_invitation"
+    },
+    {
+      "id": "scene5_feedback_sleep",
+      "header": "场景5 / 停滞的自习",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你刚趴下没多久，就被老师提醒现在还是上课。你只能重新坐起来，继续面对那页怎么也写不进去的题。",
+      "next": "scene6_invitation"
+    },
+    {
+      "id": "scene6_invitation",
+      "header": "场景6 / 要不要下楼",
+      "mode": "interaction",
+      "background": "classroom_dusk",
+      "speaker": "灵灵",
+      "text": "20:20，他像平时一样站在门口问你要不要下去走两圈。你知道自己状态很差，也知道作业还摊在桌上。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "go_downstairs",
+          "text": "跟他下楼走两圈",
+          "type": "choice",
+          "next": "scene7a_opening",
+          "set_bool": {
+            "went_downstairs": true
+          }
+        },
+        {
+          "id": "stay_classroom",
+          "text": "想在教室里写作业",
+          "type": "choice",
+          "next": "scene6_stay_feedback",
+          "set_bool": {
+            "went_downstairs": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene6_stay_feedback",
+      "header": "场景7B-1 / 留在教室",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你还是把自己留在了教室里。明明知道状态已经很差了，可你还是想把自己按回座位、按回作业、按回那套看起来正常的秩序里。",
+      "text_variants": [
+        {
+          "if_bool": {
+            "key": "rest_flag_scene5",
+            "value": true
+          },
+          "text": "你还是把自己留在了教室里。刚才那一点想躲开的冲动并没有真的帮到你，可你还是不想动，也不想被人看见自己现在这副样子。"
+        }
+      ],
+      "next": "scene7b_choice"
+    },
+    {
+      "id": "scene7b_choice",
+      "header": "场景7B-2 / 留在教室",
+      "mode": "interaction",
+      "background": "classroom_dusk",
+      "speaker": "旁白",
+      "text": "你把视线重新放回桌面，可心根本静不下来。剩下的时间里，你只能在两种都不太像办法的办法之间选一个。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene7b_do_homework",
+          "text": "自己坐在座位上写作业",
+          "type": "choice",
+          "next": "scene7b_work_choice"
+        },
+        {
+          "id": "scene7b_try_sleep",
+          "text": "睡一觉",
+          "type": "choice",
+          "next": "scene7b_sleep_attempt"
+        }
+      ]
+    },
+    {
+      "id": "scene7b_work_choice",
+      "header": "场景7B-2A / 写作业",
+      "mode": "interaction",
+      "background": "choice_focus",
+      "speaker": "旁白",
+      "text": "你逼自己重新翻开书本，像是只要先做点什么，就还能勉强把这个夜晚维持住。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene7b_write_math",
+          "text": "数学",
+          "type": "choice",
+          "next": "scene7b_work_math"
+        },
+        {
+          "id": "scene7b_write_other",
+          "text": "其他科目",
+          "type": "choice",
+          "next": "scene7b_work_other"
+        }
+      ]
+    },
+    {
+      "id": "scene7b_work_math",
+      "header": "场景7B-2A / 写作业",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你还是把本子翻回了数学。偏偏今天讲的正好又是你本来就不太擅长的函数同构，盯着题看了很久，脑子却像被什么堵住一样。一直写到放学，你也没真正做完几道，这只让本来就低下去的心更难受了。",
+      "set_string": {
+        "side_route_mode": "写作业"
+      },
+      "next": "scene10_departure"
+    },
+    {
+      "id": "scene7b_work_other",
+      "header": "场景7B-2A / 写作业",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你没有再碰数学，而是机械地把其他科目的作业一本本摊开。情绪并没有真的变好，只是被你硬生生按进了‘先做点别的’这层秩序里。到放学时，你勉强写完了两科，可那种麻木感也还留在身体里。",
+      "set_string": {
+        "side_route_mode": "写作业"
+      },
+      "next": "scene10_departure"
+    },
+    {
+      "id": "scene7b_sleep_attempt",
+      "header": "场景7B-2B / 睡一觉",
+      "mode": "narration",
+      "background": "choice_focus",
+      "text": "你把脸重新埋进臂弯里，想让自己哪怕暂时离开这一切一会儿。",
+      "next": "scene7b_sleep_fail",
+      "next_variants": [
+        {
+          "if_bool": {
+            "key": "rest_flag_scene1",
+            "value": true
+          },
+          "next": "scene7b_sleep_check_scene5"
+        }
+      ]
+    },
+    {
+      "id": "scene7b_sleep_check_scene5",
+      "header": "场景7B-2B / 睡一觉",
+      "mode": "narration",
+      "background": "choice_focus",
+      "text": "这一次，你没有立刻坐起来。教室里那些翻书声和笔尖摩擦声像是慢慢退远了，可人也还没有真的掉进睡意里。",
+      "next": "scene7b_sleep_fail",
+      "next_variants": [
+        {
+          "if_bool": {
+            "key": "rest_flag_scene5",
+            "value": true
+          },
+          "next": "scene7b_dream_fall"
+        }
+      ]
+    },
+    {
+      "id": "scene7b_sleep_fail",
+      "header": "场景7B-2B / 睡一觉",
+      "mode": "narration",
+      "background": "ending_glow",
+      "text": "可你还是没能睡着。整个人绷得太紧了，连想逃开一下都做不到。你只能重新坐起来，继续面对教室、作业和这一晚剩下的时间。",
+      "set_string": {
+        "side_route_mode": "睡不着"
+      },
+      "next": "scene10_departure"
+    },
+    {
+      "id": "scene7b_dream_fall",
+      "header": "梦境 / 睡着",
+      "mode": "performance",
+      "background": "dream_drift",
+      "text": "你慢慢睡着了。",
+      "set_string": {
+        "side_route_mode": "梦境"
+      },
+      "next": "scene7b_dream_fragment_1"
+    },
+    {
+      "id": "scene7b_dream_fragment_1",
+      "header": "梦境 / 破碎片段",
+      "mode": "performance",
+      "background": "dream_drift",
+      "text": "桌角、灯光、名字。\n\n全都碎开。",
+      "next": "scene7b_dream_fragment_2"
+    },
+    {
+      "id": "scene7b_dream_fragment_2",
+      "header": "梦境 / 破碎片段",
+      "mode": "performance",
+      "background": "dream_drift",
+      "text": "有什么东西一直往下坠。\n\n你抓不住。",
+      "next": "scene7b_dream_fragment_3"
+    },
+    {
+      "id": "scene7b_dream_fragment_3",
+      "header": "梦境 / 破碎片段",
+      "mode": "performance",
+      "background": "dream_drift",
+      "text": "声音混在一起。\n\n拉扯。\n\n下沉。",
+      "next": "scene7b_dream_wake"
+    },
+    {
+      "id": "scene7b_dream_wake",
+      "header": "梦境 / 醒来",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "等你再抬起头，现实感像是被铃声和收拾书包的动静一点点拉了回来。你醒了，额头发闷，教室却已经走到了放学。",
+      "next": "scene10_departure"
+    },
+    {
+      "id": "scene7a_opening",
+      "header": "场景7A-1 / 走下楼",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "刚下楼时，你还没有彻底崩掉。只是走着走着，终于得从某个地方开口。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "opening_grade",
+          "text": "说成绩",
+          "type": "choice",
+          "next": "scene7a_hide_place",
+          "set_string": {
+            "opening_line": "grade"
+          }
+        },
+        {
+          "id": "opening_homework",
+          "text": "说作业",
+          "type": "choice",
+          "next": "scene7a_hide_place",
+          "set_string": {
+            "opening_line": "homework"
+          }
+        },
+        {
+          "id": "opening_breakdown",
+          "text": "说“我有点撑不住了”",
+          "type": "choice",
+          "next": "scene7a_hide_place",
+          "set_string": {
+            "opening_line": "breakdown"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene7a_hide_place",
+      "header": "场景7A-2 / 转移地点",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "说着说着，你已经开始想躲开人群了。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "opening_line",
+            "value": "grade"
+          },
+          "text": "你先说起了成绩，可没说两句，声音就开始不稳。再往前走一点，你已经不想让别人看见你的表情。"
+        },
+        {
+          "if_string_equals": {
+            "key": "opening_line",
+            "value": "homework"
+          },
+          "text": "你本来只是想拿作业当借口，可越说越知道自己根本不是在烦作业。人一多，你就更不想继续站在那里。"
+        },
+        {
+          "if_string_equals": {
+            "key": "opening_line",
+            "value": "breakdown"
+          },
+          "text": "那句‘我有点撑不住了’一说出口，情绪就已经开始往下掉。你只想赶紧找个不被看见的角落。"
+        }
+      ],
+      "interaction_mode": "hotspot",
+      "interactions": [
+        {
+          "id": "hide_tree",
+          "text": "去树下",
+          "type": "hotspot",
+          "next": "scene7a_topics",
+          "set_string": {
+            "hide_place": "tree"
+          }
+        },
+        {
+          "id": "hide_gym_back",
+          "text": "去体育馆后面",
+          "type": "hotspot",
+          "next": "scene7a_topics",
+          "set_string": {
+            "hide_place": "gym_back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene7a_topics",
+      "header": "场景7A-3 / 真正倾诉",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "background_variants": [
+        {
+          "if_string_equals": {
+            "key": "hide_place",
+            "value": "tree"
+          },
+          "background": "soft_narration"
+        },
+        {
+          "if_string_equals": {
+            "key": "hide_place",
+            "value": "gym_back"
+          },
+          "background": "night_rain"
+        }
+      ],
+      "speaker": "旁白",
+      "text": "到了更隐蔽的地方后，你终于开始把压着的话一点点说出来。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "hide_place",
+            "value": "tree"
+          },
+          "text": "树下昏暗得像一个临时避难所。你知道自己已经快绷不住了，只能把那些最压着你的东西一点点往外说。"
+        },
+        {
+          "if_string_equals": {
+            "key": "hide_place",
+            "value": "gym_back"
+          },
+          "text": "体育馆后面安静得像把人从人群里切了出来。坐下来以后，话反而更容易一股脑地往外涌。"
+        }
+      ],
+      "interaction_mode": "topic",
+      "requires_all_interactions": true,
+      "completion_text": "四个话题都已经说出口了。你知道自己已经到了再也强撑不住的边缘。",
+      "completion_text_variants": [
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "人际"
+          },
+          "text": "四个话题都已经说出口了。最后卡在心口、最难放下的，是人际。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "处分"
+          },
+          "text": "四个话题都已经说出口了。最后卡在心口、最难放下的，是处分。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "家里"
+          },
+          "text": "四个话题都已经说出口了。最后卡在心口、最难放下的，是家里。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "身体"
+          },
+          "text": "四个话题都已经说出口了。最后卡在心口、最难放下的，是身体。"
+        }
+      ],
+      "completion_next": "scene7a_hug",
+      "interactions": [
+        {
+          "id": "topic_people",
+          "text": "人际",
+          "type": "topic",
+          "feedback_text": "你先说到人际。那些原本想装作没事的别扭、误会和孤独感，一开口就全有了重量。",
+          "set_string": {
+            "last_confession_topic": "人际"
+          }
+        },
+        {
+          "id": "topic_discipline",
+          "text": "处分",
+          "type": "topic",
+          "feedback_text": "你说到处分时，语气明显更乱了一点。那件事像一直悬着，没有真正放下去过。",
+          "set_string": {
+            "last_confession_topic": "处分"
+          }
+        },
+        {
+          "id": "topic_home",
+          "text": "家里",
+          "type": "topic",
+          "feedback_text": "你说到家里时，整个人都像突然更疲惫了。不是一句两句能说清，但它一直都在压着你。",
+          "set_string": {
+            "last_confession_topic": "家里"
+          }
+        },
+        {
+          "id": "topic_body",
+          "text": "身体",
+          "type": "topic",
+          "feedback_text": "你说到身体时，才发现这种烦和累原来早就已经蔓到整个人身上了。",
+          "set_string": {
+            "last_confession_topic": "身体"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene7a_hug",
+      "header": "场景7A-4 / 拥抱",
+      "mode": "performance",
+      "background": "ending_glow",
+      "text": "后面的话开始断了。\n\n眼泪先一步掉下来。\n\n再然后，是终于有人把你接住。",
+      "next": "scene7a_comfort"
+    },
+    {
+      "id": "scene7a_comfort",
+      "header": "场景7A-5 / 安慰",
+      "mode": "dialogue",
+      "background": "ending_glow",
+      "speaker": "灵灵",
+      "text": "他没有急着问更多，只是一点点顺着你的情绪往下接。那种快要失控的晃动，没有立刻停下来，但至少不再是一个人扛着了。",
+      "next": "scene8_enter_prompt"
+    },
+    {
+      "id": "scene8_enter_prompt",
+      "header": "场景8-1 / 进办公室",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "你先去厕所洗了把脸。灵灵把你送到办公室门口后停住了脚步，而你站在门口，还是得自己走进去。",
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "office_enter",
+          "text": "进去",
+          "type": "action",
+          "next": "scene8_talk_prompt"
+        }
+      ]
+    },
+    {
+      "id": "scene8_talk_prompt",
+      "header": "场景8-2 / 前半段谈话",
+      "mode": "interaction",
+      "background": "quiet_hallway",
+      "speaker": "川哥",
+      "text": "他先问你成绩和状态，没有一上来就责备，语气甚至比你想象中更缓一点。可你心里压着的那根线，还没真正松开。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "人际"
+          },
+          "text": "他先问你成绩和状态，语气还算温和。可你脑子里最先翻上来的，却是最近那些怎么也处理不好的关系和自责。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "处分"
+          },
+          "text": "他先问你成绩和状态，语气还算温和。可你心里最硌着的，反而是那件始终没有真正落下去的处分。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "家里"
+          },
+          "text": "他先问你成绩和状态，语气还算温和。可你已经很累了，像连解释自己为什么难受都快没力气了。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "身体"
+          },
+          "text": "他先问你成绩和状态，语气还算温和。可你只觉得浑身都很烦，很累，好像从脑子到身体都已经被这一天磨得发空。"
+        }
+      ],
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "office_speak",
+          "text": "开口",
+          "type": "action",
+          "next": "scene8_talk_feedback_speak"
+        },
+        {
+          "id": "office_silent",
+          "text": "沉默",
+          "type": "action",
+          "next": "scene8_talk_feedback_silent"
+        }
+      ]
+    },
+    {
+      "id": "scene8_talk_feedback_speak",
+      "header": "场景8-2 / 前半段谈话",
+      "mode": "dialogue",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "你还是勉强开了口，把那些难受一点点往外倒。话说得并不整齐，但至少谈话真的开始了。",
+      "next": "scene8_conflict_prompt"
+    },
+    {
+      "id": "scene8_talk_feedback_silent",
+      "header": "场景8-2 / 前半段谈话",
+      "mode": "dialogue",
+      "background": "quiet_hallway",
+      "speaker": "旁白",
+      "text": "你先沉默了一会儿，像是不知道该从哪里讲起。可安静本身也没有替你挡住情绪，最后还是只能慢慢往下说。",
+      "next": "scene8_conflict_prompt"
+    },
+    {
+      "id": "scene8_conflict_prompt",
+      "header": "场景8-3 / 失言与冲突",
+      "mode": "interaction",
+      "background": "choice_focus",
+      "speaker": "旁白",
+      "text": "话题还是绕到了处分上。委屈、疲惫和误解叠在一起，你那句本来想解释的话，最后还是带了刺。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "处分"
+          },
+          "text": "话题很自然地绕到了处分上。那件事本来就一直卡在你心里，所以那句带着埋怨的话，几乎是顺着情绪就冲了出来。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "人际"
+          },
+          "text": "你原本想说的并不只是处分，可情绪一乱，最后还是把很多压着的委屈一股脑地指向了这一点。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "家里"
+          },
+          "text": "你已经很疲惫了，连控制那句会不会伤人的力气都快没有了。结果一开口，还是把话说得太重。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "身体"
+          },
+          "text": "那种积了很久的烦和累，在这里突然找到了一个出口。话冲出来的时候，你自己都知道已经来不及收了。"
+        }
+      ],
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "office_explain",
+          "text": "解释",
+          "type": "action",
+          "next": "scene8_conflict_feedback_explain"
+        },
+        {
+          "id": "office_lower_head",
+          "text": "低头",
+          "type": "action",
+          "next": "scene8_conflict_feedback_lower_head"
+        }
+      ]
+    },
+    {
+      "id": "scene8_conflict_feedback_explain",
+      "header": "场景8-3 / 失言与冲突",
+      "mode": "narration",
+      "background": "choice_focus",
+      "text": "你本能地想解释，可他已经被那句话刺到了，语气一下子重了下来。那一声吼出来的时候，你整个人都僵住了。",
+      "next": "scene8_breakdown"
+    },
+    {
+      "id": "scene8_conflict_feedback_lower_head",
+      "header": "场景8-3 / 失言与冲突",
+      "mode": "narration",
+      "background": "choice_focus",
+      "text": "你几乎是立刻低下了头，可那句已经说出口的话还是留在空气里。等他语气重下来，你才后知后觉地感到一阵发冷。",
+      "next": "scene8_breakdown"
+    },
+    {
+      "id": "scene8_breakdown",
+      "header": "场景8-4 / 崩溃与中断",
+      "mode": "interaction",
+      "background": "ending_glow",
+      "speaker": "旁白",
+      "text": "谈话被迫断掉了。你抓起桌上的纸，转过去趴在对面老师的桌子上，眼泪一下子全下来了。",
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "office_wipe_tears",
+          "text": "擦眼泪",
+          "type": "action",
+          "next": "scene8_restart"
+        }
+      ]
+    },
+    {
+      "id": "scene8_restart",
+      "header": "场景8-5 / 重新开始",
+      "mode": "interaction",
+      "background": "ending_glow",
+      "speaker": "旁白",
+      "text": "哭过一阵以后，办公室里慢慢重新安静下来。他的语气也重新放缓了，像是想把谈话一点点拉回去。",
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "office_sit_back",
+          "text": "坐回去",
+          "type": "action",
+          "next": "scene8_aftercare"
+        }
+      ]
+    },
+    {
+      "id": "scene8_aftercare",
+      "header": "场景8-5 / 重新开始",
+      "mode": "dialogue",
+      "background": "ending_glow",
+      "speaker": "川哥",
+      "text": "后半段谈话终于没有再继续往下扎。他还是讲成绩，讲人，讲以后该怎么慢慢往回走。你并没有一下子好起来，但至少没刚进来时那么绷紧了。",
+      "next": "scene9_return"
+    },
+    {
+      "id": "scene9_return",
+      "header": "场景9 / 回到教室",
+      "mode": "interaction",
+      "background": "classroom_dusk",
+      "speaker": "旁白",
+      "text": "21:20 左右，你回到教室。周围同学抬头看了你两眼，有人随口问你刚才去哪了。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene9_brush_off",
+          "text": "敷衍带过",
+          "type": "choice",
+          "next": "scene9_feedback_brush_off"
+        },
+        {
+          "id": "scene9_simple_explain",
+          "text": "简单解释",
+          "type": "choice",
+          "next": "scene9_feedback_explain"
+        },
+        {
+          "id": "scene9_no_answer",
+          "text": "不回答",
+          "type": "choice",
+          "next": "scene9_feedback_silent"
+        }
+      ]
+    },
+    {
+      "id": "scene9_feedback_brush_off",
+      "header": "场景9 / 回到教室",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你只说了句‘没去哪’，像什么都不想展开。日常的教室重新把人包回去，可情绪风暴的余震还没有真正散干净。",
+      "next": "scene9_mainline_end"
+    },
+    {
+      "id": "scene9_feedback_explain",
+      "header": "场景9 / 回到教室",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你低声说自己考得不太好，刚去办公室聊了聊。说完这句，你反而不想再解释更多，只想先把自己放回座位上。",
+      "next": "scene9_mainline_end"
+    },
+    {
+      "id": "scene9_feedback_silent",
+      "header": "场景9 / 回到教室",
+      "mode": "narration",
+      "background": "classroom_dusk",
+      "text": "你只是坐下，没有接那句问话。周围的声音很快又散回各自的位置，而你也终于能暂时藏进这种普通里。",
+      "next": "scene9_mainline_end"
+    },
+    {
+      "id": "scene9_mainline_end",
+      "header": "场景9 / 回到教室",
+      "mode": "narration",
+      "background": "ending_glow",
+      "text": "回到教室以后，晚自习最后那点时间忽然过得很快。你没有一下子好起来，可那种彻底失控的边缘，至少已经离你远了一点。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "处分"
+          },
+          "text": "回到教室以后，那件一直卡着你的事当然没有立刻消失。可至少今晚已经有人听见了，也有人把你从最深的地方往回拉了一点。"
+        },
+        {
+          "if_string_equals": {
+            "key": "last_confession_topic",
+            "value": "家里"
+          },
+          "text": "回到教室以后，那些更深、更难说清的压力当然还在。可至少这一晚已经不再只是你一个人扛着，呼吸也终于能慢慢顺下来一点。"
+        }
+      ],
+      "next": "scene10_departure"
+    },
+    {
+      "id": "scene10_departure",
+      "header": "场景10 / 放学与回家",
+      "mode": "narration",
+      "background": "night_rain",
+      "text": "放学铃响的时候，教室里的人潮一下子松开了。你跟着人群往外走，晚风里已经带了点雨意。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "写作业"
+          },
+          "text": "放学铃响的时候，你几乎是机械地把本子和笔一股脑塞进书包。那些没做完和勉强做完的东西一起压在心口，晚风一吹，只觉得整个人更空了。"
+        },
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "睡不着"
+          },
+          "text": "放学铃响的时候，你像是终于被这间教室吐了出来。明明什么都没休息到，可人还是带着一身疲惫走进了夜里的雨意。"
+        },
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "梦境"
+          },
+          "text": "放学铃响的时候，你还有点分不清自己刚才到底睡了多久。走出教学楼时，夜风和雨意一起扑过来，像是把人重新拽回了现实。"
+        },
+        {
+          "if_bool": {
+            "key": "went_downstairs",
+            "value": true
+          },
+          "text": "放学铃响的时候，你已经没有刚听到成绩时那么僵了。走出教学楼时，晚风里带着雨意，那种被接住之后的虚脱感也慢慢浮上来。"
+        }
+      ],
+      "next": "scene10_board_prompt"
+    },
+    {
+      "id": "scene10_board_prompt",
+      "header": "场景10-1 / 上车",
+      "mode": "interaction",
+      "background": "night_rain",
+      "speaker": "旁白",
+      "text": "校门口的夜色已经压下来。富豪把车停在你身边，像平时一样偏了偏头，示意你上来。",
+      "interaction_mode": "action",
+      "interactions": [
+        {
+          "id": "scene10_board",
+          "text": "坐上后座",
+          "type": "action",
+          "next": "scene10_objects"
+        }
+      ]
+    },
+    {
+      "id": "scene10_objects",
+      "header": "场景10-2 / 雨夜路上",
+      "mode": "interaction",
+      "background": "night_rain",
+      "speaker": "旁白",
+      "text": "车开出去以后，雨夜像一层一层往你身上落。视线一会儿停在这儿，一会儿又停在那儿。",
+      "interaction_mode": "object",
+      "requires_all_interactions": true,
+      "completion_text": "风声、雨声、前进的路，全都重新慢慢落回了你的身体里。你终于肯把胸口那团东西再往外放一点。",
+      "completion_next": "scene10_song_choice",
+      "interactions": [
+        {
+          "id": "scene10_object_rain",
+          "text": "雨",
+          "type": "object",
+          "feedback_text": "雨点打在袖口和膝盖上，很快就把人也打得没法再装作若无其事。都已经湿了，好像也没什么可继续绷着的。"
+        },
+        {
+          "id": "scene10_object_back",
+          "text": "他的背影",
+          "type": "object",
+          "feedback_text": "你看着前面那道稳稳的背影，忽然意识到，今晚有人正带着你往家走。光是这一点，就已经比刚才好很多了。"
+        },
+        {
+          "id": "scene10_object_lights",
+          "text": "路灯",
+          "type": "object",
+          "feedback_text": "一盏又一盏路灯从雨里划过去，像是在提醒你：这一段再长，也总会有尽头。"
+        }
+      ]
+    },
+    {
+      "id": "scene10_song_choice",
+      "header": "场景10-3 / 唱歌与释放",
+      "mode": "interaction",
+      "background": "night_rain",
+      "speaker": "旁白",
+      "text": "风从耳边穿过去，你忽然想唱点什么，把今晚剩下的情绪也一起带出去。",
+      "interaction_mode": "choice",
+      "interactions": [
+        {
+          "id": "scene10_song_study",
+          "text": "学习",
+          "type": "choice",
+          "next": "scene10_song_release",
+          "set_string": {
+            "rain_song_emotion": "学习"
+          }
+        },
+        {
+          "id": "scene10_song_family",
+          "text": "家庭",
+          "type": "choice",
+          "next": "scene10_song_release",
+          "set_string": {
+            "rain_song_emotion": "家庭"
+          }
+        },
+        {
+          "id": "scene10_song_people",
+          "text": "人际",
+          "type": "choice",
+          "next": "scene10_song_release",
+          "set_string": {
+            "rain_song_emotion": "人际"
+          }
+        },
+        {
+          "id": "scene10_song_discipline",
+          "text": "处分",
+          "type": "choice",
+          "next": "scene10_song_release",
+          "set_string": {
+            "rain_song_emotion": "处分"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene10_song_release",
+      "header": "场景10-3 / 唱歌与释放",
+      "mode": "narration",
+      "background": "night_rain",
+      "text": "你先唱出了和成绩有关的那点难受。那些压在心口的失败感，在风里被拉得很长，又一点点散开。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "家庭"
+          },
+          "text": "你把和家里有关的那点难受也一起唱了出去。很多平时解释不清的疲惫，在风雨里反而终于有了出口。"
+        },
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "人际"
+          },
+          "text": "你唱着唱着，又想起那些说不清的孤独和别扭。可声音真的出去以后，胸口反而松开了一点。"
+        },
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "处分"
+          },
+          "text": "你把那件一直悬着的事也丢进了歌里。它当然没有被立刻解决，可至少这一刻已经不再只会在脑子里反复打转。"
+        }
+      ],
+      "next": "scene10_reply"
+    },
+    {
+      "id": "scene10_reply",
+      "header": "场景10-3 / 唱歌与释放",
+      "mode": "dialogue",
+      "background": "night_rain",
+      "speaker": "富豪",
+      "text": "“别老盯着那一次没考好。”他骑着车，只很短地回了你一句。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "家庭"
+          },
+          "text": "“先别想那么多，回去再说。”他只回了你一句，却刚好够把人往回拽住。"
+        },
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "人际"
+          },
+          "text": "“你哪有自己想的那么一个人。”他没回头，只很自然地接了这么一句。"
+        },
+        {
+          "if_string_equals": {
+            "key": "rain_song_emotion",
+            "value": "处分"
+          },
+          "text": "“那事总会过去的。”他的语气还是松的，却让那根一直绷着的线终于松了一点。"
+        }
+      ],
+      "next": "scene10_arrive"
+    },
+    {
+      "id": "scene10_arrive",
+      "header": "场景10-4 / 到家",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "到家时，雨还没有停。你从车上下来，和他道了别，带着一身潮湿和一点终于能落地的疲惫，慢慢往楼里走。",
+      "next": "scene11_home",
+      "next_variants": [
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "写作业"
+          },
+          "next": "scene11_side_home"
+        },
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "睡不着"
+          },
+          "next": "scene11_side_home"
+        },
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "梦境"
+          },
+          "next": "scene11_dream_home"
+        }
+      ]
+    },
+    {
+      "id": "scene11_home",
+      "header": "场景11 / 夜晚消息",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "洗漱的时候，镜子里的人还是有点狼狈。可等你把一切都慢慢收拾下来，手机忽然轻轻震了一下。",
+      "set_string": {
+        "ending_tone": "主线被他人接住"
+      },
+      "next": "scene11_message"
+    },
+    {
+      "id": "scene11_side_home",
+      "header": "场景11 / 夜晚消息",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "洗漱的时候，你才发现自己今晚其实一直在硬撑。水声一停下来，房间就显得格外安静，像是在提醒你：这一晚终究还是过去了。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "写作业"
+          },
+          "text": "洗漱的时候，你还在想那些没做完和勉强做完的作业。可等水声停下来，你也慢慢意识到，今晚至少已经被自己一点点拖到了这里。"
+        },
+        {
+          "if_string_equals": {
+            "key": "side_route_mode",
+            "value": "睡不着"
+          },
+          "text": "洗漱的时候，你整个人都还有点发空。那种想休息却休息不到的感觉还在，可你到底还是把这一晚自己熬到了尽头。"
+        }
+      ],
+      "set_string": {
+        "ending_tone": "支线自我调整"
+      },
+      "next": "scene11_message"
+    },
+    {
+      "id": "scene11_dream_home",
+      "header": "场景11 / 夜晚消息",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "洗漱的时候，你还会忽然想起刚才梦里那些碎掉的片段。可手机屏幕亮起来时，现实又把你轻轻拉了回来。",
+      "set_string": {
+        "ending_tone": "梦境后带着未来感"
+      },
+      "next": "scene11_message"
+    },
+    {
+      "id": "scene11_message",
+      "header": "场景11 / 夜晚消息",
+      "mode": "dialogue",
+      "background": "soft_narration",
+      "speaker": "灵灵",
+      "text": "“到家了就早点休息。今天已经很难了，别再逼自己了。”",
+      "next": "scene11_settle"
+    },
+    {
+      "id": "scene11_settle",
+      "header": "场景11 / 夜晚消息",
+      "mode": "narration",
+      "background": "soft_narration",
+      "text": "你盯着那条消息看了好一会儿，才慢慢回了一个“好”。很多事都还没有解决，可至少今晚已经不是一个人熬过去了。",
+      "next": "scene12_blackout"
+    },
+    {
+      "id": "scene12_blackout",
+      "header": "场景12 / 结尾",
+      "mode": "performance",
+      "background": "ending_black",
+      "text": "手机又轻轻响了两声。\n\n叮。\n\n叮。",
+      "next": "scene12_caption"
+    },
+    {
+      "id": "scene12_caption",
+      "header": "场景12 / 结尾",
+      "mode": "performance",
+      "background": "ending_black",
+      "text": "那一天没有改变成绩。\n\n可有人接住了你。\n\n而你终于走到了明天。",
+      "text_variants": [
+        {
+          "if_string_equals": {
+            "key": "ending_tone",
+            "value": "支线自我调整"
+          },
+          "text": "那一天没有改变成绩。\n\n你也没有真的被谁一把拉出来。\n\n可你还是把自己，一点点拖到了明天。"
+        },
+        {
+          "if_string_equals": {
+            "key": "ending_tone",
+            "value": "梦境后带着未来感"
+          },
+          "text": "那一天没有改变成绩。\n\n可你在一场短得像裂缝的梦里，先看见了坠落，再看见了醒来。\n\n于是明天忽然有了一点形状。"
+        },
+        {
+          "if_string_equals": {
+            "key": "ending_tone",
+            "value": "主线被他人接住"
+          },
+          "text": "那一天没有改变成绩。\n\n可那些差一点把你压垮的东西，已经在陪伴里松开了一点。\n\n这是《第一天》。"
+        }
+      ],
+      "next": "scene12_end"
+    },
+    {
+      "id": "scene12_end",
+      "header": "第一天 / 已结束",
+      "mode": "performance",
+      "background": "ending_black",
+      "text": "Demo 已结束。"
+    }
+  ]
+}
