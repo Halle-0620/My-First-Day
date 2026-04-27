@@ -1,5 +1,7 @@
 #include "narrativeengine.h"
 
+#include <QStringList>
+
 NarrativeEngine::NarrativeEngine(QObject *parent)
     : QObject(parent)
 {
@@ -13,6 +15,10 @@ void NarrativeEngine::loadScenes(const NarrativeSceneMap &scenes, const QString 
     m_gameState.clear();
     m_visitedInteractions.clear();
     m_runtimeFeedbackText.clear();
+    m_runtimeFeedbackFrames.clear();
+    m_runtimeFeedbackIndex = -1;
+    m_sceneAutoFrames.clear();
+    m_sceneAutoIndex = -1;
 }
 
 void NarrativeEngine::start()
@@ -30,6 +36,43 @@ void NarrativeEngine::continueNarrative()
     }
 
     QString nextSceneId;
+
+    if (hasActiveRuntimeFeedback()) {
+        if (m_runtimeFeedbackIndex + 1 < m_runtimeFeedbackFrames.size()) {
+            ++m_runtimeFeedbackIndex;
+            emit stateChanged();
+            return;
+        }
+
+        m_runtimeFeedbackFrames.clear();
+        m_runtimeFeedbackIndex = -1;
+        m_runtimeFeedbackText.clear();
+
+        if (scene->requiresAllInteractions && allRequiredInteractionsVisited(*scene)) {
+            nextSceneId = resolvedCompletionNextSceneId(*scene);
+            if (!nextSceneId.isEmpty()) {
+                enterScene(nextSceneId);
+                return;
+            }
+        }
+
+        emit stateChanged();
+        return;
+    }
+
+    if (hasActiveSceneAutoFrame()) {
+        if (m_sceneAutoIndex + 1 < m_sceneAutoFrames.size()) {
+            ++m_sceneAutoIndex;
+            emit stateChanged();
+            return;
+        }
+
+        nextSceneId = resolvedNextSceneId(*scene);
+        if (!nextSceneId.isEmpty()) {
+            enterScene(nextSceneId);
+        }
+        return;
+    }
 
     if (scene->requiresAllInteractions) {
         if (!allRequiredInteractionsVisited(*scene)) {
@@ -65,8 +108,37 @@ void NarrativeEngine::handleInteraction(const QString &interactionId)
     applyInteractionWrites(*interaction);
 
     if (scene->requiresAllInteractions) {
+        const int feedbackOrder = m_visitedInteractions.size();
         m_visitedInteractions.insert(interactionId);
-        m_runtimeFeedbackText = interaction->feedbackText;
+        if (interaction->feedbackSequencesByOrder.size() == 1
+            && !interaction->feedbackSequencesByOrder.first().isEmpty()) {
+            m_runtimeFeedbackFrames = interaction->feedbackSequencesByOrder.first();
+            m_runtimeFeedbackIndex = 0;
+            m_runtimeFeedbackText = m_runtimeFeedbackFrames.first();
+        } else if (feedbackOrder < interaction->feedbackSequencesByOrder.size()
+            && !interaction->feedbackSequencesByOrder.at(feedbackOrder).isEmpty()) {
+            m_runtimeFeedbackFrames = interaction->feedbackSequencesByOrder.at(feedbackOrder);
+            m_runtimeFeedbackIndex = 0;
+            m_runtimeFeedbackText = m_runtimeFeedbackFrames.first();
+        } else if (feedbackOrder < interaction->feedbackTextsByOrder.size()
+            && !interaction->feedbackTextsByOrder.at(feedbackOrder).isEmpty()) {
+            m_runtimeFeedbackFrames = splitTextFrames(interaction->feedbackTextsByOrder.at(feedbackOrder));
+            m_runtimeFeedbackIndex = m_runtimeFeedbackFrames.isEmpty() ? -1 : 0;
+            m_runtimeFeedbackText = m_runtimeFeedbackFrames.isEmpty() ? QString() : m_runtimeFeedbackFrames.first();
+        } else {
+            m_runtimeFeedbackFrames = splitTextFrames(interaction->feedbackText);
+            m_runtimeFeedbackIndex = m_runtimeFeedbackFrames.isEmpty() ? -1 : 0;
+            m_runtimeFeedbackText = m_runtimeFeedbackFrames.isEmpty() ? QString() : m_runtimeFeedbackFrames.first();
+        }
+
+        if (!hasActiveRuntimeFeedback() && allRequiredInteractionsVisited(*scene)) {
+            const QString nextSceneId = resolvedCompletionNextSceneId(*scene);
+            if (!nextSceneId.isEmpty()) {
+                enterScene(nextSceneId);
+                return;
+            }
+        }
+
         emit stateChanged();
         return;
     }
@@ -101,6 +173,47 @@ NarrativeViewState NarrativeEngine::currentViewState() const
     viewState.interactionItems = buildInteractionItems(*scene);
     viewState.showSpeaker = !viewState.speaker.trimmed().isEmpty();
 
+    if (hasActiveRuntimeFeedback()) {
+        QString frameText = m_runtimeFeedbackFrames.at(m_runtimeFeedbackIndex);
+        QString frameSpeaker;
+        if (extractSpeakerPrefix(&frameText, &frameSpeaker)) {
+            viewState.displayMode = NarrativeDisplayMode::Dialogue;
+            viewState.speaker = frameSpeaker;
+            viewState.showSpeaker = true;
+        } else {
+            viewState.displayMode = NarrativeDisplayMode::Performance;
+            viewState.speaker.clear();
+            viewState.showSpeaker = false;
+        }
+        viewState.text = frameText;
+        viewState.interactionMode = InteractionMode::None;
+        viewState.interactionItems.clear();
+        viewState.showContinue = false;
+        viewState.autoAdvance = true;
+        return viewState;
+    }
+
+    if (hasActiveSceneAutoFrame()) {
+        QString frameText = m_sceneAutoFrames.at(m_sceneAutoIndex);
+        QString frameSpeaker;
+        if (extractSpeakerPrefix(&frameText, &frameSpeaker)) {
+            viewState.displayMode = NarrativeDisplayMode::Dialogue;
+            viewState.speaker = frameSpeaker;
+            viewState.showSpeaker = true;
+        } else {
+            viewState.displayMode = NarrativeDisplayMode::Performance;
+            viewState.speaker.clear();
+            viewState.showSpeaker = false;
+        }
+        viewState.text = frameText;
+        viewState.interactionMode = InteractionMode::None;
+        viewState.interactionItems.clear();
+        viewState.showContinue = false;
+        viewState.autoAdvance = !resolvedNextSceneId(*scene).isEmpty()
+            || m_sceneAutoIndex + 1 < m_sceneAutoFrames.size();
+        return viewState;
+    }
+
     if (scene->displayMode == NarrativeDisplayMode::Interaction) {
         if (scene->requiresAllInteractions) {
             viewState.showContinue = allRequiredInteractionsVisited(*scene)
@@ -108,6 +221,8 @@ NarrativeViewState NarrativeEngine::currentViewState() const
         } else {
             viewState.showContinue = false;
         }
+    } else if (scene->displayMode == NarrativeDisplayMode::Performance) {
+        viewState.showContinue = false;
     } else {
         viewState.showContinue = !resolvedNextSceneId(*scene).isEmpty();
     }
@@ -156,6 +271,10 @@ void NarrativeEngine::enterScene(const QString &sceneId)
     m_currentSceneId = sceneId;
     m_visitedInteractions.clear();
     m_runtimeFeedbackText.clear();
+    m_runtimeFeedbackFrames.clear();
+    m_runtimeFeedbackIndex = -1;
+    m_sceneAutoFrames.clear();
+    m_sceneAutoIndex = -1;
 
     NarrativeScene &scene = m_scenes[m_currentSceneId];
 
@@ -169,6 +288,11 @@ void NarrativeEngine::enterScene(const QString &sceneId)
 
     if (scene.onEnter) {
         scene.onEnter(m_gameState);
+    }
+
+    if (scene.displayMode == NarrativeDisplayMode::Performance) {
+        m_sceneAutoFrames = splitTextFrames(resolvedPrimaryText(scene));
+        m_sceneAutoIndex = m_sceneAutoFrames.isEmpty() ? -1 : 0;
     }
 
     emit stateChanged();
@@ -187,6 +311,10 @@ void NarrativeEngine::applyInteractionWrites(const NarrativeInteraction &interac
 
 QString NarrativeEngine::resolvedText(const NarrativeScene &scene) const
 {
+    if (hasActiveRuntimeFeedback()) {
+        return m_runtimeFeedbackFrames.at(m_runtimeFeedbackIndex);
+    }
+
     if (scene.requiresAllInteractions && allRequiredInteractionsVisited(scene)) {
         const QString completionVariantText = resolveConditionalText(scene.completionTextVariants);
         if (!completionVariantText.isEmpty()) {
@@ -204,6 +332,14 @@ QString NarrativeEngine::resolvedText(const NarrativeScene &scene) const
 
     if (!m_runtimeFeedbackText.isEmpty()) {
         return m_runtimeFeedbackText;
+    }
+
+    if (scene.requiresAllInteractions && !allRequiredInteractionsVisited(scene)) {
+        const int visitedCount = m_visitedInteractions.size();
+        if (visitedCount > 0 && visitedCount <= scene.progressTexts.size()
+            && !scene.progressTexts.at(visitedCount - 1).isEmpty()) {
+            return scene.progressTexts.at(visitedCount - 1);
+        }
     }
 
     const QString variantText = resolveConditionalText(scene.textVariants);
@@ -317,4 +453,72 @@ bool NarrativeEngine::allRequiredInteractionsVisited(const NarrativeScene &scene
     }
 
     return true;
+}
+
+bool NarrativeEngine::hasActiveRuntimeFeedback() const
+{
+    return m_runtimeFeedbackIndex >= 0 && m_runtimeFeedbackIndex < m_runtimeFeedbackFrames.size();
+}
+
+bool NarrativeEngine::hasActiveSceneAutoFrame() const
+{
+    return m_sceneAutoIndex >= 0 && m_sceneAutoIndex < m_sceneAutoFrames.size();
+}
+
+QString NarrativeEngine::resolvedPrimaryText(const NarrativeScene &scene) const
+{
+    const QString variantText = resolveConditionalText(scene.textVariants);
+    if (!variantText.isEmpty()) {
+        return variantText;
+    }
+
+    if (scene.textResolver) {
+        return scene.textResolver(m_gameState);
+    }
+
+    return scene.text;
+}
+
+QList<QString> NarrativeEngine::splitTextFrames(const QString &text) const
+{
+    QList<QString> frames;
+    const QString normalized = QString(text).replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+
+    for (const QString &block : normalized.split(QStringLiteral("\n\n"), Qt::SkipEmptyParts)) {
+        const QString trimmed = block.trimmed();
+        if (!trimmed.isEmpty()) {
+            frames.append(trimmed);
+        }
+    }
+
+    if (frames.isEmpty() && !text.trimmed().isEmpty()) {
+        frames.append(text.trimmed());
+    }
+
+    return frames;
+}
+
+bool NarrativeEngine::extractSpeakerPrefix(QString *text, QString *speaker) const
+{
+    static const QStringList speakers = {
+        QStringLiteral("你"),
+        QStringLiteral("灵灵"),
+        QStringLiteral("川哥"),
+        QStringLiteral("富豪")
+    };
+
+    if (!text || !speaker) {
+        return false;
+    }
+
+    for (const QString &candidate : speakers) {
+        const QString prefix = candidate + QStringLiteral("：");
+        if (text->startsWith(prefix)) {
+            *speaker = candidate;
+            *text = text->mid(prefix.size()).trimmed();
+            return true;
+        }
+    }
+
+    return false;
 }

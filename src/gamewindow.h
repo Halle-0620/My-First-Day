@@ -12,6 +12,7 @@
 class DialoguePanel;
 class QLabel;
 class QKeyEvent;
+class QTimer;
 
 class GameWindow : public QMainWindow
 {
@@ -31,6 +32,7 @@ public:
 
     void showNarrationMode(const QString &text, bool showContinue);
     void showDialogueMode(const QString &speaker, const QString &text, bool showContinue);
+    void showPerformanceMode(const QString &text);
     void showInteractionMode(const QString &speaker,
                              const QString &text,
                              InteractionMode mode,
@@ -42,6 +44,7 @@ protected:
 
 private slots:
     void advanceNarrative();
+    void advanceAutoNarrative();
     void handleInteractionTriggered(const QString &id);
     void applyNarrativeState();
 
@@ -49,11 +52,16 @@ private:
     void buildUi();
     void loadStoryContent();
     void setHeaderText(const QString &text);
+    void setCenterText(const QString &text);
+    void clearCenterText();
+    void scheduleAutoAdvance(const QString &text);
 
     BackgroundWidget *m_backgroundWidget;
     DialoguePanel *m_dialoguePanel;
+    QLabel *m_centerTextLabel;
     QLabel *m_headerLabel;
     NarrativeEngine *m_narrativeEngine;
+    QTimer *m_autoAdvanceTimer;
 };
 
 #endif // GAMEWINDOW_H

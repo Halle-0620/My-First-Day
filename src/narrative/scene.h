@@ -5,6 +5,7 @@
 #include "../core/interactiontypes.h"
 
 #include <QHash>
+#include <QList>
 #include <QString>
 
 #include <functional>
@@ -57,6 +58,8 @@ struct NarrativeInteraction
     InteractionItemType type = InteractionItemType::Choice;
     QString nextSceneId;
     QString feedbackText;
+    QList<QString> feedbackTextsByOrder;
+    QList<QList<QString>> feedbackSequencesByOrder;
     QHash<QString, bool> boolWrites;
     QHash<QString, QString> stringWrites;
 };
@@ -80,6 +83,7 @@ struct NarrativeScene
     QString nextSceneId;
     QString completionText;
     QString completionNextSceneId;
+    QList<QString> progressTexts;
     bool requiresAllInteractions = false;
     QHash<QString, bool> boolWrites;
     QHash<QString, QString> stringWrites;

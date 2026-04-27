@@ -21,6 +21,7 @@ struct NarrativeViewState
     InteractionItems interactionItems;
     bool showSpeaker = false;
     bool showContinue = false;
+    bool autoAdvance = false;
 };
 
 class NarrativeEngine : public QObject
@@ -55,6 +56,11 @@ private:
     BackgroundStyle resolvedBackgroundStyle(const NarrativeScene &scene) const;
     InteractionItems buildInteractionItems(const NarrativeScene &scene) const;
     bool allRequiredInteractionsVisited(const NarrativeScene &scene) const;
+    bool hasActiveRuntimeFeedback() const;
+    bool hasActiveSceneAutoFrame() const;
+    QString resolvedPrimaryText(const NarrativeScene &scene) const;
+    QList<QString> splitTextFrames(const QString &text) const;
+    bool extractSpeakerPrefix(QString *text, QString *speaker) const;
 
     NarrativeSceneMap m_scenes;
     QString m_startSceneId;
@@ -62,6 +68,10 @@ private:
     GameState m_gameState;
     QSet<QString> m_visitedInteractions;
     QString m_runtimeFeedbackText;
+    QList<QString> m_runtimeFeedbackFrames;
+    int m_runtimeFeedbackIndex = -1;
+    QList<QString> m_sceneAutoFrames;
+    int m_sceneAutoIndex = -1;
 };
 
 #endif // NARRATIVEENGINE_H
