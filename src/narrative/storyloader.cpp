@@ -244,6 +244,101 @@ bool parseStringWrites(const QJsonObject &object,
     return true;
 }
 
+bool parseStringList(const QJsonObject &object,
+                     const QString &key,
+                     QList<QString> *target,
+                     QString *errorMessage)
+{
+    if (!object.contains(key)) {
+        return true;
+    }
+
+    const QJsonValue value = object.value(key);
+    if (!value.isArray()) {
+        *errorMessage = QStringLiteral("Field %1 must be an array").arg(key);
+        return false;
+    }
+
+    const QJsonArray array = value.toArray();
+    for (const QJsonValue &entryValue : array) {
+        if (!entryValue.isString()) {
+            *errorMessage = QStringLiteral("Entries in %1 must be strings").arg(key);
+            return false;
+        }
+        target->append(entryValue.toString());
+    }
+
+    return true;
+}
+
+bool parseStringListList(const QJsonObject &object,
+                         const QString &key,
+                         QList<QList<QString>> *target,
+                         QString *errorMessage)
+{
+    if (!object.contains(key)) {
+        return true;
+    }
+
+    const QJsonValue value = object.value(key);
+    if (!value.isArray()) {
+        *errorMessage = QStringLiteral("Field %1 must be an array").arg(key);
+        return false;
+    }
+
+    const QJsonArray outerArray = value.toArray();
+    for (const QJsonValue &innerValue : outerArray) {
+        if (!innerValue.isArray()) {
+            *errorMessage = QStringLiteral("Entries in %1 must be arrays").arg(key);
+            return false;
+        }
+
+        QList<QString> innerList;
+        const QJsonArray innerArray = innerValue.toArray();
+        for (const QJsonValue &entryValue : innerArray) {
+            if (!entryValue.isString()) {
+                *errorMessage = QStringLiteral("Nested entries in %1 must be strings").arg(key);
+                return false;
+            }
+            innerList.append(entryValue.toString());
+        }
+
+        target->append(innerList);
+    }
+
+    return true;
+}
+
+bool parseStringListWithFallback(const QJsonObject &object,
+                                 const QString &primaryKey,
+                                 const QString &fallbackKey,
+                                 QList<QString> *target,
+                                 QString *errorMessage)
+{
+    if (object.contains(primaryKey)) {
+        return parseStringList(object, primaryKey, target, errorMessage);
+    }
+    if (object.contains(fallbackKey)) {
+        return parseStringList(object, fallbackKey, target, errorMessage);
+    }
+    return true;
+}
+
+bool parseStringListListWithFallback(const QJsonObject &object,
+                                     const QString &primaryKey,
+                                     const QString &fallbackKey,
+                                     QList<QList<QString>> *target,
+                                     QString *errorMessage)
+{
+    if (object.contains(primaryKey)) {
+        return parseStringListList(object, primaryKey, target, errorMessage);
+    }
+    if (object.contains(fallbackKey)) {
+        return parseStringListList(object, fallbackKey, target, errorMessage);
+    }
+    return true;
+}
+
 bool parseConditionalTexts(const QJsonObject &sceneObject,
                            const QString &key,
                            QList<ConditionalTextVariant> *variants,
@@ -413,6 +508,22 @@ bool parseInteraction(const QJsonObject &interactionObject,
         interaction->feedbackText = interactionObject.value(QStringLiteral("feedback_text")).toString();
     }
 
+    if (!parseStringListWithFallback(interactionObject,
+                                     QStringLiteral("feedback_text_by_order"),
+                                     QStringLiteral("feedback_texts_by_order"),
+                                     &interaction->feedbackTextsByOrder,
+                                     errorMessage)) {
+        return false;
+    }
+
+    if (!parseStringListListWithFallback(interactionObject,
+                                         QStringLiteral("feedback_sequence_by_order"),
+                                         QStringLiteral("feedback_sequences_by_order"),
+                                         &interaction->feedbackSequencesByOrder,
+                                         errorMessage)) {
+        return false;
+    }
+
     if (!parseBoolWrites(interactionObject, QStringLiteral("set_bool"), &interaction->boolWrites, errorMessage)) {
         return false;
     }
@@ -547,6 +658,13 @@ StoryLoadResult StoryLoader::loadFromFile(const QString &filePath)
         scene.completionText = sceneObject.value(QStringLiteral("completion_text")).toString();
         scene.completionNextSceneId = sceneObject.value(QStringLiteral("completion_next")).toString();
         scene.requiresAllInteractions = sceneObject.value(QStringLiteral("requires_all_interactions")).toBool(false);
+        if (!parseStringListWithFallback(sceneObject,
+                                         QStringLiteral("progress_texts"),
+                                         QStringLiteral("progress_text"),
+                                         &scene.progressTexts,
+                                         &result.errorMessage)) {
+            return result;
+        }
 
         const QString modeString = requireString(sceneObject, QStringLiteral("mode"), &result.errorMessage);
         if (modeString.isEmpty() && !result.errorMessage.isEmpty()) {

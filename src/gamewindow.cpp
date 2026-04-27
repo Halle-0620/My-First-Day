@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -16,12 +17,16 @@ GameWindow::GameWindow(QWidget *parent)
     : QMainWindow(parent),
       m_backgroundWidget(nullptr),
       m_dialoguePanel(nullptr),
+      m_centerTextLabel(nullptr),
       m_headerLabel(nullptr),
-      m_narrativeEngine(new NarrativeEngine(this))
+      m_narrativeEngine(new NarrativeEngine(this)),
+      m_autoAdvanceTimer(new QTimer(this))
 {
     buildUi();
 
     connect(m_narrativeEngine, &NarrativeEngine::stateChanged, this, &GameWindow::applyNarrativeState);
+    connect(m_autoAdvanceTimer, &QTimer::timeout, this, &GameWindow::advanceAutoNarrative);
+    m_autoAdvanceTimer->setSingleShot(true);
 
     loadStoryContent();
     m_narrativeEngine->start();
@@ -69,6 +74,7 @@ void GameWindow::setInteractionMode(InteractionMode mode)
 
 void GameWindow::showNarrationMode(const QString &text, bool showContinue)
 {
+    clearCenterText();
     setDialogueVisible(true);
     clearSpeaker();
     setText(text);
@@ -80,6 +86,7 @@ void GameWindow::showNarrationMode(const QString &text, bool showContinue)
 
 void GameWindow::showDialogueMode(const QString &speaker, const QString &text, bool showContinue)
 {
+    clearCenterText();
     setDialogueVisible(true);
     setSpeaker(speaker);
     setText(text);
@@ -89,12 +96,23 @@ void GameWindow::showDialogueMode(const QString &speaker, const QString &text, b
     setContinueVisible(showContinue);
 }
 
+void GameWindow::showPerformanceMode(const QString &text)
+{
+    setDialogueVisible(false);
+    setInteractionMode(InteractionMode::None);
+    setInteractionItems({});
+    m_dialoguePanel->setInteractionVisible(false);
+    setContinueVisible(false);
+    setCenterText(text);
+}
+
 void GameWindow::showInteractionMode(const QString &speaker,
                                      const QString &text,
                                      InteractionMode mode,
                                      const InteractionItems &items,
                                      bool showContinue)
 {
+    clearCenterText();
     setDialogueVisible(true);
 
     if (speaker.trimmed().isEmpty()) {
@@ -137,6 +155,11 @@ void GameWindow::advanceNarrative()
     m_narrativeEngine->continueNarrative();
 }
 
+void GameWindow::advanceAutoNarrative()
+{
+    m_narrativeEngine->continueNarrative();
+}
+
 void GameWindow::handleInteractionTriggered(const QString &id)
 {
     if (!m_dialoguePanel->hasVisibleInteractions()) {
@@ -148,11 +171,12 @@ void GameWindow::handleInteractionTriggered(const QString &id)
 
 void GameWindow::applyNarrativeState()
 {
+    m_autoAdvanceTimer->stop();
+
     const NarrativeViewState state = m_narrativeEngine->currentViewState();
 
     setHeaderText(state.header);
     setBackgroundStyle(state.backgroundStyle);
-    setDialogueVisible(true);
 
     if (state.displayMode == NarrativeDisplayMode::Interaction && !state.interactionItems.isEmpty()) {
         showInteractionMode(state.showSpeaker ? state.speaker : QString(),
@@ -160,13 +184,22 @@ void GameWindow::applyNarrativeState()
                             state.interactionMode,
                             state.interactionItems,
                             state.showContinue);
+        if (state.autoAdvance) {
+            scheduleAutoAdvance(state.text);
+        }
         return;
     }
 
     if (state.showSpeaker) {
         showDialogueMode(state.speaker, state.text, state.showContinue);
+    } else if (state.displayMode == NarrativeDisplayMode::Performance) {
+        showPerformanceMode(state.text);
     } else {
         showNarrationMode(state.text, state.showContinue);
+    }
+
+    if (state.autoAdvance) {
+        scheduleAutoAdvance(state.text);
     }
 }
 
@@ -193,6 +226,26 @@ void GameWindow::buildUi()
         "}"
     );
     layout->addWidget(m_headerLabel, 0, Qt::AlignLeft | Qt::AlignTop);
+
+    layout->addStretch();
+
+    m_centerTextLabel = new QLabel(m_backgroundWidget);
+    m_centerTextLabel->setObjectName("centerTextLabel");
+    m_centerTextLabel->setAlignment(Qt::AlignCenter);
+    m_centerTextLabel->setWordWrap(true);
+    m_centerTextLabel->setMinimumHeight(120);
+    m_centerTextLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_centerTextLabel->setStyleSheet(
+        "QLabel#centerTextLabel {"
+        "    color: rgb(246, 248, 255);"
+        "    font-size: 24px;"
+        "    line-height: 145%;"
+        "    font-weight: 500;"
+        "    background: transparent;"
+        "}"
+    );
+    m_centerTextLabel->hide();
+    layout->addWidget(m_centerTextLabel, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
     layout->addStretch();
 
@@ -235,4 +288,23 @@ void GameWindow::loadStoryContent()
 void GameWindow::setHeaderText(const QString &text)
 {
     m_headerLabel->setText(text);
+}
+
+void GameWindow::setCenterText(const QString &text)
+{
+    m_centerTextLabel->setText(text);
+    m_centerTextLabel->setVisible(!text.trimmed().isEmpty());
+}
+
+void GameWindow::clearCenterText()
+{
+    m_centerTextLabel->clear();
+    m_centerTextLabel->hide();
+}
+
+void GameWindow::scheduleAutoAdvance(const QString &text)
+{
+    int durationMs = 900 + text.trimmed().size() * 85;
+    durationMs = qMax(1100, qMin(durationMs, 4200));
+    m_autoAdvanceTimer->start(durationMs);
 }
