@@ -8,8 +8,9 @@
 
 class QLabel;
 class QPushButton;
-class QTextEdit;
 class QGridLayout;
+class QPaintEvent;
+class QResizeEvent;
 
 class DialoguePanel : public QWidget
 {
@@ -38,19 +39,27 @@ public:
     bool isContinueVisible() const;
     bool hasVisibleInteractions() const;
     void focusFirstInteraction();
+    QStringList paginateTextFrames(const QString &text, int maxLinesPerFrame = 1) const;
 
 signals:
     void interactionTriggered(const QString &id);
+    void interactionButtonClicked(const QString &id);
+    void continueButtonClicked();
     void continueRequested();
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     void clearInteractionButtons();
     void rebuildInteractionButtons();
     void refreshInteractionButtonStyle(QPushButton *button) const;
     int columnCountForMode() const;
+    void updateNameplateGeometry();
 
     QLabel *m_nameLabel;
-    QTextEdit *m_textBox;
+    QLabel *m_textBox;
     QWidget *m_interactionContainer;
     QGridLayout *m_interactionLayout;
     QPushButton *m_continueButton;

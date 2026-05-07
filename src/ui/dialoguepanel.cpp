@@ -4,10 +4,13 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QPainterPath>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QStyle>
-#include <QTextCursor>
-#include <QTextEdit>
+#include <QTextLayout>
 #include <QVBoxLayout>
 
 namespace {
@@ -41,27 +44,30 @@ DialoguePanel::DialoguePanel(QWidget *parent)
       m_continueButton(nullptr),
       m_interactionMode(InteractionMode::None)
 {
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    setAttribute(Qt::WA_StyledBackground, false);
 
     auto *rootLayout = new QVBoxLayout(this);
-    rootLayout->setContentsMargins(0, 0, 0, 0);
-    rootLayout->setSpacing(10);
+    rootLayout->setSizeConstraint(QLayout::SetDefaultConstraint);
+    rootLayout->setContentsMargins(30, 28, 30, 12);
+    rootLayout->setSpacing(6);
 
     m_nameLabel = new QLabel(QStringLiteral("旁白"), this);
     m_nameLabel->setObjectName("nameLabel");
-    m_nameLabel->setMinimumHeight(40);
+    m_nameLabel->setFixedHeight(34);
     m_nameLabel->setAlignment(Qt::AlignCenter);
-    rootLayout->addWidget(m_nameLabel, 0, Qt::AlignLeft);
 
-    m_textBox = new QTextEdit(this);
+    m_textBox = new QLabel(this);
     m_textBox->setObjectName("textBox");
-    m_textBox->setReadOnly(true);
-    m_textBox->setMinimumHeight(150);
-    m_textBox->setFrameStyle(QFrame::NoFrame);
+    m_textBox->setWordWrap(true);
+    m_textBox->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_textBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_textBox->setFixedHeight(fontMetrics().height() + 24);
     rootLayout->addWidget(m_textBox);
 
     m_interactionContainer = new QWidget(this);
     m_interactionContainer->setObjectName("interactionContainer");
+    m_interactionContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     m_interactionLayout = new QGridLayout(m_interactionContainer);
     m_interactionLayout->setContentsMargins(0, 0, 0, 0);
     m_interactionLayout->setHorizontalSpacing(10);
@@ -69,109 +75,110 @@ DialoguePanel::DialoguePanel(QWidget *parent)
     rootLayout->addWidget(m_interactionContainer);
 
     auto *footerLayout = new QHBoxLayout();
+    footerLayout->setContentsMargins(0, 0, 0, 0);
     footerLayout->addStretch();
 
-    m_continueButton = new QPushButton(QStringLiteral("继续"), this);
+    m_continueButton = new QPushButton(QStringLiteral(">"), this);
     m_continueButton->setObjectName("continueButton");
-    m_continueButton->setMinimumHeight(42);
+    m_continueButton->setFixedSize(44, 28);
     footerLayout->addWidget(m_continueButton, 0, Qt::AlignRight);
     rootLayout->addLayout(footerLayout);
 
-    connect(m_continueButton, &QPushButton::clicked, this, &DialoguePanel::continueRequested);
+    connect(m_continueButton, &QPushButton::clicked, this, [this]() {
+        emit continueButtonClicked();
+        emit continueRequested();
+    });
 
     setStyleSheet(
-        "DialoguePanel {"
-        "    background-color: rgba(7, 10, 18, 170);"
-        "    border: 1px solid rgba(255, 255, 255, 40);"
-        "    border-radius: 20px;"
-        "}"
         "QLabel#nameLabel {"
-        "    background-color: rgba(232, 238, 255, 225);"
-        "    color: rgb(23, 33, 58);"
-        "    border-radius: 14px;"
-        "    padding: 4px 18px;"
-        "    font-size: 16px;"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,"
+        "                                 stop:0 rgba(221, 232, 255, 240),"
+        "                                 stop:1 rgba(170, 196, 236, 236));"
+        "    color: rgb(58, 88, 145);"
+        "    border: 2px solid rgba(255, 255, 255, 210);"
+        "    border-radius: 15px;"
+        "    padding: 2px 20px;"
+        "    font-size: 15px;"
         "    font-weight: 700;"
         "}"
-        "QTextEdit#textBox {"
+        "QLabel#textBox {"
         "    background: transparent;"
-        "    color: rgb(242, 245, 250);"
-        "    selection-background-color: rgba(255, 255, 255, 50);"
-        "    font-size: 17px;"
-        "    line-height: 140%;"
-        "    padding: 8px 10px;"
+        "    color: rgb(223, 232, 250);"
+        "    font-size: 16px;"
+        "    line-height: 150%;"
+        "    padding: 4px 10px 2px 10px;"
         "}"
         "QWidget#interactionContainer {"
         "    background: transparent;"
         "}"
         "QPushButton {"
-        "    border: none;"
-        "    border-radius: 12px;"
-        "    padding: 10px 16px;"
-        "    font-size: 15px;"
+        "    border: 1px solid rgba(255, 255, 255, 165);"
+        "    border-radius: 14px;"
+        "    padding: 8px 14px;"
+        "    font-size: 14px;"
         "}"
         "QPushButton[interactionRole=\"choice\"] {"
-        "    background-color: rgba(245, 248, 255, 220);"
-        "    color: rgb(24, 33, 59);"
-        "    min-height: 46px;"
+        "    background-color: rgba(53, 79, 132, 224);"
+        "    color: rgb(232, 239, 252);"
+        "    min-height: 38px;"
         "}"
         "QPushButton[interactionRole=\"hotspot\"] {"
-        "    background-color: rgba(255, 255, 255, 28);"
-        "    color: rgb(242, 245, 250);"
-        "    border: 1px solid rgba(255, 255, 255, 70);"
-        "    min-height: 44px;"
+        "    background-color: rgba(40, 63, 108, 198);"
+        "    color: rgb(224, 233, 250);"
+        "    min-height: 38px;"
         "}"
         "QPushButton[interactionRole=\"action\"] {"
-        "    background-color: rgba(232, 238, 255, 210);"
-        "    color: rgb(22, 30, 51);"
-        "    min-height: 42px;"
+        "    background-color: rgba(71, 95, 149, 220);"
+        "    color: rgb(230, 238, 252);"
+        "    min-height: 36px;"
         "    min-width: 130px;"
         "}"
         "QPushButton[interactionRole=\"topic\"] {"
-        "    background-color: rgba(255, 255, 255, 20);"
-        "    color: rgb(242, 245, 250);"
-        "    border: 1px solid rgba(255, 255, 255, 65);"
-        "    min-height: 44px;"
+        "    background-color: rgba(40, 63, 108, 198);"
+        "    color: rgb(224, 233, 250);"
+        "    min-height: 38px;"
         "}"
         "QPushButton[interactionRole=\"object\"] {"
-        "    background-color: rgba(255, 255, 255, 10);"
-        "    color: rgb(230, 236, 252);"
-        "    border: 1px solid rgba(255, 255, 255, 28);"
+        "    background-color: rgba(28, 46, 83, 188);"
+        "    color: rgb(221, 232, 250);"
         "    min-height: 34px;"
         "    padding: 6px 12px;"
         "    border-radius: 999px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: rgba(255, 255, 255, 240);"
-        "    color: rgb(24, 33, 59);"
+        "    background-color: rgba(82, 113, 176, 236);"
+        "    color: rgb(245, 248, 255);"
         "}"
         "QPushButton:focus {"
-        "    border: 2px solid rgba(120, 156, 255, 220);"
-        "    padding: 8px 14px;"
+        "    border: 2px solid rgba(149, 188, 255, 220);"
+        "    padding: 9px 17px;"
         "}"
         "QPushButton[visited=\"true\"] {"
-        "    background-color: rgba(152, 165, 194, 120);"
-        "    color: rgba(240, 244, 255, 170);"
-        "    border: 1px solid rgba(255, 255, 255, 24);"
+        "    background-color: rgba(93, 111, 145, 155);"
+        "    color: rgba(210, 219, 237, 178);"
+        "    border: 1px solid rgba(255, 255, 255, 96);"
         "}"
         "QPushButton:disabled {"
-        "    color: rgba(240, 244, 255, 150);"
+        "    color: rgba(210, 219, 237, 150);"
         "}"
         "QPushButton#continueButton {"
-        "    background-color: rgba(245, 248, 255, 220);"
-        "    color: rgb(24, 33, 59);"
-        "    min-width: 110px;"
+        "    background-color: rgba(227, 235, 251, 228);"
+        "    color: rgb(69, 96, 148);"
+        "    border-radius: 14px;"
         "    font-weight: 700;"
+        "    font-size: 15px;"
         "}"
     );
 
     m_interactionContainer->hide();
+    updateNameplateGeometry();
 }
 
 void DialoguePanel::setSpeaker(const QString &speaker)
 {
     m_nameLabel->setText(speaker);
     m_nameLabel->setVisible(!speaker.trimmed().isEmpty());
+    updateNameplateGeometry();
 }
 
 void DialoguePanel::clearSpeaker()
@@ -187,8 +194,54 @@ void DialoguePanel::setSpeakerVisible(bool visible)
 
 void DialoguePanel::setText(const QString &text)
 {
-    m_textBox->setPlainText(text);
-    m_textBox->moveCursor(QTextCursor::Start);
+    m_textBox->setText(text);
+}
+
+QStringList DialoguePanel::paginateTextFrames(const QString &text, int maxLinesPerFrame) const
+{
+    QString normalized = text;
+    normalized.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+
+    if (normalized.trimmed().isEmpty()) {
+        return {};
+    }
+
+    const int lineLimit = qMax(1, maxLinesPerFrame);
+    const int availableWidth = qMax(120, m_textBox->contentsRect().width() - 4);
+
+    QTextLayout layout(normalized, m_textBox->font());
+    QTextOption option = layout.textOption();
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    layout.setTextOption(option);
+
+    QStringList visualLines;
+    layout.beginLayout();
+    while (true) {
+        QTextLine line = layout.createLine();
+        if (!line.isValid()) {
+            break;
+        }
+
+        line.setLineWidth(availableWidth);
+        QString lineText = normalized.mid(line.textStart(), line.textLength());
+        lineText.remove(QChar('\n'));
+        lineText = lineText.trimmed();
+        if (!lineText.isEmpty()) {
+            visualLines.append(lineText);
+        }
+    }
+    layout.endLayout();
+
+    if (visualLines.isEmpty()) {
+        return {normalized.trimmed()};
+    }
+
+    QStringList frames;
+    for (int index = 0; index < visualLines.size(); index += lineLimit) {
+        frames.append(visualLines.mid(index, lineLimit).join(QStringLiteral("\n")));
+    }
+
+    return frames;
 }
 
 void DialoguePanel::setChoices(const QStringList &choices)
@@ -301,6 +354,57 @@ void DialoguePanel::focusFirstInteraction()
     }
 }
 
+void DialoguePanel::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    const QRectF panelRect = rect().adjusted(2, 16, -2, -2);
+
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(9, 18, 36, 58));
+    painter.drawRoundedRect(panelRect.translated(0, 7), 24, 24);
+
+    QLinearGradient fill(panelRect.topLeft(), panelRect.bottomLeft());
+    fill.setColorAt(0.0, QColor(29, 43, 78, 230));
+    fill.setColorAt(0.58, QColor(19, 31, 58, 220));
+    fill.setColorAt(1.0, QColor(13, 22, 42, 212));
+
+    painter.setBrush(fill);
+    painter.setPen(QPen(QColor(255, 255, 255, 214), 3.0));
+    painter.drawRoundedRect(panelRect, 24, 24);
+
+    painter.save();
+    QPainterPath clipPath;
+    clipPath.addRoundedRect(panelRect, 24, 24);
+    painter.setClipPath(clipPath);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(152, 188, 255, 24));
+
+    const qreal dotSpacing = 36.0;
+    const qreal dotRadius = 7.0;
+    for (qreal y = panelRect.top() + 16.0; y < panelRect.bottom() + dotSpacing; y += dotSpacing) {
+        for (qreal x = panelRect.left() + 18.0; x < panelRect.right() + dotSpacing; x += dotSpacing) {
+            painter.drawEllipse(QPointF(x, y), dotRadius, dotRadius);
+        }
+    }
+
+    QLinearGradient shine(panelRect.topLeft(), panelRect.topRight());
+    shine.setColorAt(0.0, QColor(255, 255, 255, 65));
+    shine.setColorAt(0.45, QColor(255, 255, 255, 15));
+    shine.setColorAt(1.0, QColor(197, 219, 255, 42));
+    painter.fillRect(QRectF(panelRect.left(), panelRect.top(), panelRect.width(), panelRect.height() * 0.33), shine);
+    painter.restore();
+}
+
+void DialoguePanel::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    updateNameplateGeometry();
+}
+
 void DialoguePanel::clearInteractionButtons()
 {
     m_interactionButtons.clear();
@@ -336,6 +440,7 @@ void DialoguePanel::rebuildInteractionButtons()
         button->setEnabled(item.enabled);
 
         connect(button, &QPushButton::clicked, this, [this, item]() {
+            emit interactionButtonClicked(item.id);
             emit interactionTriggered(item.id);
         });
 
@@ -367,7 +472,7 @@ int DialoguePanel::columnCountForMode() const
 {
     switch (m_interactionMode) {
     case InteractionMode::Choice:
-        return 1;
+        return 2;
     case InteractionMode::Hotspot:
         return 2;
     case InteractionMode::Action:
@@ -381,4 +486,16 @@ int DialoguePanel::columnCountForMode() const
     }
 
     return 1;
+}
+
+void DialoguePanel::updateNameplateGeometry()
+{
+    if (!m_nameLabel) {
+        return;
+    }
+
+    const int preferredWidth = qBound(170, width() / 6, 230);
+    m_nameLabel->setFixedWidth(preferredWidth);
+    m_nameLabel->move(54, 0);
+    m_nameLabel->raise();
 }

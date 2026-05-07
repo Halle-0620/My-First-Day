@@ -2,6 +2,17 @@
 #define BACKGROUNDSTYLE_H
 
 enum class BackgroundStyle {
+    DeskDusk,
+    DeskNight,
+    Hallway,
+    TreeUnder,
+    GymBack,
+    Office,
+    Toilet,
+    Dismissal,
+    SchoolGate,
+    Ebike,
+    Home,
     ClassroomDusk,
     QuietHallway,
     ChoiceFocus,
@@ -9,7 +20,10 @@ enum class BackgroundStyle {
     NightRain,
     EndingGlow,
     EndingBlack,
-    DreamDrift
+    DreamDrift,
+    Message1,
+    Message2,
+    Message3
 };
 
 #endif // BACKGROUNDSTYLE_H

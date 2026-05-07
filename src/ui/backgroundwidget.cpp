@@ -34,6 +34,39 @@ void BackgroundWidget::setBackgroundStyle(BackgroundStyle style)
     m_backgroundStyle = style;
 
     switch (m_backgroundStyle) {
+    case BackgroundStyle::DeskDusk:
+        m_overlayTint = QColor(20, 22, 30, 42);
+        break;
+    case BackgroundStyle::DeskNight:
+        m_overlayTint = QColor(10, 14, 22, 72);
+        break;
+    case BackgroundStyle::Hallway:
+        m_overlayTint = QColor(8, 16, 28, 78);
+        break;
+    case BackgroundStyle::TreeUnder:
+        m_overlayTint = QColor(10, 16, 20, 68);
+        break;
+    case BackgroundStyle::GymBack:
+        m_overlayTint = QColor(10, 14, 26, 76);
+        break;
+    case BackgroundStyle::Office:
+        m_overlayTint = QColor(18, 18, 24, 40);
+        break;
+    case BackgroundStyle::Toilet:
+        m_overlayTint = QColor(20, 24, 28, 46);
+        break;
+    case BackgroundStyle::Dismissal:
+        m_overlayTint = QColor(16, 18, 24, 54);
+        break;
+    case BackgroundStyle::SchoolGate:
+        m_overlayTint = QColor(12, 18, 26, 62);
+        break;
+    case BackgroundStyle::Ebike:
+        m_overlayTint = QColor(8, 12, 24, 86);
+        break;
+    case BackgroundStyle::Home:
+        m_overlayTint = QColor(18, 16, 16, 34);
+        break;
     case BackgroundStyle::ClassroomDusk:
         m_overlayTint = QColor(12, 18, 32, 90);
         break;
@@ -58,6 +91,11 @@ void BackgroundWidget::setBackgroundStyle(BackgroundStyle style)
     case BackgroundStyle::DreamDrift:
         m_overlayTint = QColor(18, 10, 34, 120);
         break;
+    case BackgroundStyle::Message1:
+    case BackgroundStyle::Message2:
+    case BackgroundStyle::Message3:
+        m_overlayTint = QColor(18, 16, 16, 18);
+        break;
     }
 
     update();
@@ -81,6 +119,61 @@ void BackgroundWidget::paintEvent(QPaintEvent *event)
         QLinearGradient gradient(rect().topLeft(), rect().bottomLeft());
 
         switch (m_backgroundStyle) {
+        case BackgroundStyle::DeskDusk:
+            gradient.setColorAt(0.0, QColor(76, 88, 112));
+            gradient.setColorAt(0.55, QColor(112, 122, 148));
+            gradient.setColorAt(1.0, QColor(44, 48, 60));
+            break;
+        case BackgroundStyle::DeskNight:
+            gradient.setColorAt(0.0, QColor(38, 52, 82));
+            gradient.setColorAt(0.55, QColor(56, 72, 104));
+            gradient.setColorAt(1.0, QColor(18, 24, 38));
+            break;
+        case BackgroundStyle::Hallway:
+            gradient.setColorAt(0.0, QColor(34, 52, 86));
+            gradient.setColorAt(0.55, QColor(54, 78, 118));
+            gradient.setColorAt(1.0, QColor(16, 24, 38));
+            break;
+        case BackgroundStyle::TreeUnder:
+            gradient.setColorAt(0.0, QColor(42, 58, 54));
+            gradient.setColorAt(0.55, QColor(62, 88, 78));
+            gradient.setColorAt(1.0, QColor(18, 28, 24));
+            break;
+        case BackgroundStyle::GymBack:
+            gradient.setColorAt(0.0, QColor(34, 42, 72));
+            gradient.setColorAt(0.55, QColor(52, 64, 96));
+            gradient.setColorAt(1.0, QColor(16, 20, 34));
+            break;
+        case BackgroundStyle::Office:
+            gradient.setColorAt(0.0, QColor(116, 124, 138));
+            gradient.setColorAt(0.55, QColor(146, 152, 164));
+            gradient.setColorAt(1.0, QColor(70, 74, 84));
+            break;
+        case BackgroundStyle::Toilet:
+            gradient.setColorAt(0.0, QColor(124, 132, 140));
+            gradient.setColorAt(0.55, QColor(156, 162, 170));
+            gradient.setColorAt(1.0, QColor(76, 80, 88));
+            break;
+        case BackgroundStyle::Dismissal:
+            gradient.setColorAt(0.0, QColor(82, 94, 112));
+            gradient.setColorAt(0.55, QColor(110, 120, 136));
+            gradient.setColorAt(1.0, QColor(42, 46, 56));
+            break;
+        case BackgroundStyle::SchoolGate:
+            gradient.setColorAt(0.0, QColor(40, 56, 88));
+            gradient.setColorAt(0.55, QColor(56, 78, 118));
+            gradient.setColorAt(1.0, QColor(18, 28, 42));
+            break;
+        case BackgroundStyle::Ebike:
+            gradient.setColorAt(0.0, QColor(18, 32, 58));
+            gradient.setColorAt(0.55, QColor(24, 46, 82));
+            gradient.setColorAt(1.0, QColor(8, 14, 28));
+            break;
+        case BackgroundStyle::Home:
+            gradient.setColorAt(0.0, QColor(112, 98, 84));
+            gradient.setColorAt(0.55, QColor(144, 126, 110));
+            gradient.setColorAt(1.0, QColor(58, 48, 42));
+            break;
         case BackgroundStyle::ClassroomDusk:
             gradient.setColorAt(0.0, QColor(42, 58, 91));
             gradient.setColorAt(0.55, QColor(73, 93, 136));
@@ -120,6 +213,13 @@ void BackgroundWidget::paintEvent(QPaintEvent *event)
             gradient.setColorAt(0.0, QColor(49, 38, 78));
             gradient.setColorAt(0.5, QColor(23, 27, 58));
             gradient.setColorAt(1.0, QColor(7, 8, 18));
+            break;
+        case BackgroundStyle::Message1:
+        case BackgroundStyle::Message2:
+        case BackgroundStyle::Message3:
+            gradient.setColorAt(0.0, QColor(112, 98, 84));
+            gradient.setColorAt(0.55, QColor(144, 126, 110));
+            gradient.setColorAt(1.0, QColor(58, 48, 42));
             break;
         }
 

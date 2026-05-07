@@ -1,0 +1,221 @@
+{
+  "entries": [
+    {
+      "id": "bgm_life_is",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/life is.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_pingfan_zhilu",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/平凡之路.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_woxiang",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/我想.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_chunfeng_chenzui",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/春风沉醉的夜晚.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_meiyoulixiang",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/没有理想的人不伤心.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_dont_cry",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/Don't cry Don't cry.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "bgm_jiaomiansi",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/郊眠寺.mp3",
+      "loop": true,
+      "volume": 0.72
+    },
+    {
+      "id": "amb_classroom_evening_hallway",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_evening__and_hallway_looploop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_classroom_evening_and_hallway_loop",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_evening_and_hallway_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_classroom_night",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_classroom_night_loop",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_classroom_night_loopc_study",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_night_loopc_study.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_hidden_place_night",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_hidden_place_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_home_night",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_home_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.52
+    },
+    {
+      "id": "amb_office",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_office_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_playground_night",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_playground_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_rain_road",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_rain_road_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.58
+    },
+    {
+      "id": "amb_scooter_rain_ride",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_scooter_rain_ride_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.58
+    },
+    {
+      "id": "sfx_chair_scrape",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_chair_scrape.wav.mp3",
+      "loop": false,
+      "volume": 0.75
+    },
+    {
+      "id": "sfx_door_open",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_door_open.wav.mp3",
+      "loop": false,
+      "volume": 0.75
+    },
+    {
+      "id": "sfx_door_open_close",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_door_open_and_close.wav.mp3",
+      "loop": false,
+      "volume": 0.75
+    },
+    {
+      "id": "sfx_footsteps_hallway",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_footsteps_hallway.wav.mp3",
+      "loop": false,
+      "volume": 0.72
+    },
+    {
+      "id": "sfx_paper_rustle",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_paper_rustle.wav.mp3",
+      "loop": false,
+      "volume": 0.68
+    },
+    {
+      "id": "sfx_pencil_write",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_pencil_write.wav.mp3",
+      "loop": false,
+      "volume": 0.68
+    },
+    {
+      "id": "sfx_sink_water",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_sink_water.wav.mp3",
+      "loop": false,
+      "volume": 0.68
+    },
+    {
+      "id": "sfx_bell",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_bell.wav.mp3",
+      "loop": false,
+      "volume": 0.7
+    },
+    {
+      "id": "ui_click_soft",
+      "category": "ui",
+      "path": "../assets/audio/ui/ui_click_soft.wav.mp3",
+      "loop": false,
+      "volume": 0.62
+    },
+    {
+      "id": "ui_phone_message_ping",
+      "category": "ui",
+      "path": "../assets/audio/ui/ui_phone_message_ping.wav.mp3",
+      "loop": false,
+      "volume": 0.66
+    },
+    {
+      "id": "ui_text_blip_soft",
+      "category": "ui",
+      "path": "../assets/audio/ui/ui_text_blip_soft.wav.mp3",
+      "loop": false,
+      "volume": 0.45
+    },
+    {
+      "id": "emo_muffled_ring",
+      "category": "emo",
+      "path": "../assets/audio/emo/emo_muffled_ring.wav.mp3",
+      "loop": false,
+      "volume": 0.82
+    },
+    {
+      "id": "emo_score_low_rumble",
+      "category": "emo",
+      "path": "../assets/audio/emo/emo_score_low_rumble.wav.mp3",
+      "loop": false,
+      "volume": 0.68
+    }
+  ]
+}

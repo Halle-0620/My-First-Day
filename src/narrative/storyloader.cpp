@@ -7,6 +7,25 @@
 
 namespace {
 
+ShaderEffect parseShaderEffect(const QString &value, bool *ok)
+{
+    if (value.isEmpty() || value == QStringLiteral("none")) {
+        *ok = true;
+        return ShaderEffect::None;
+    }
+    if (value == QStringLiteral("drive_home")) {
+        *ok = true;
+        return ShaderEffect::DriveHome;
+    }
+    if (value == QStringLiteral("tokyo_rain")) {
+        *ok = true;
+        return ShaderEffect::TokyoRain;
+    }
+
+    *ok = false;
+    return ShaderEffect::None;
+}
+
 QString requireString(const QJsonObject &object, const QString &key, QString *errorMessage)
 {
     if (!object.contains(key) || !object.value(key).isString()) {
@@ -21,6 +40,50 @@ QString requireString(const QJsonObject &object, const QString &key, QString *er
 
 BackgroundStyle parseBackgroundStyle(const QString &value, bool *ok)
 {
+    if (value == QStringLiteral("desk_dusk")) {
+        *ok = true;
+        return BackgroundStyle::DeskDusk;
+    }
+    if (value == QStringLiteral("desk_night")) {
+        *ok = true;
+        return BackgroundStyle::DeskNight;
+    }
+    if (value == QStringLiteral("hallway")) {
+        *ok = true;
+        return BackgroundStyle::Hallway;
+    }
+    if (value == QStringLiteral("tree_under")) {
+        *ok = true;
+        return BackgroundStyle::TreeUnder;
+    }
+    if (value == QStringLiteral("gym_back")) {
+        *ok = true;
+        return BackgroundStyle::GymBack;
+    }
+    if (value == QStringLiteral("office")) {
+        *ok = true;
+        return BackgroundStyle::Office;
+    }
+    if (value == QStringLiteral("toilet")) {
+        *ok = true;
+        return BackgroundStyle::Toilet;
+    }
+    if (value == QStringLiteral("dismissal")) {
+        *ok = true;
+        return BackgroundStyle::Dismissal;
+    }
+    if (value == QStringLiteral("school_gate")) {
+        *ok = true;
+        return BackgroundStyle::SchoolGate;
+    }
+    if (value == QStringLiteral("ebike")) {
+        *ok = true;
+        return BackgroundStyle::Ebike;
+    }
+    if (value == QStringLiteral("home")) {
+        *ok = true;
+        return BackgroundStyle::Home;
+    }
     if (value == QStringLiteral("classroom_dusk")) {
         *ok = true;
         return BackgroundStyle::ClassroomDusk;
@@ -52,6 +115,18 @@ BackgroundStyle parseBackgroundStyle(const QString &value, bool *ok)
     if (value == QStringLiteral("dream_drift")) {
         *ok = true;
         return BackgroundStyle::DreamDrift;
+    }
+    if (value == QStringLiteral("message_1")) {
+        *ok = true;
+        return BackgroundStyle::Message1;
+    }
+    if (value == QStringLiteral("message_2")) {
+        *ok = true;
+        return BackgroundStyle::Message2;
+    }
+    if (value == QStringLiteral("message_3")) {
+        *ok = true;
+        return BackgroundStyle::Message3;
     }
 
     *ok = false;
@@ -524,6 +599,29 @@ bool parseInteraction(const QJsonObject &interactionObject,
         return false;
     }
 
+    if (interactionObject.contains(QStringLiteral("shader_effect"))) {
+        if (!interactionObject.value(QStringLiteral("shader_effect")).isString()) {
+            *errorMessage = QStringLiteral("Field shader_effect must be a string");
+            return false;
+        }
+
+        bool shaderOk = false;
+        interaction->shaderEffect = parseShaderEffect(interactionObject.value(QStringLiteral("shader_effect")).toString(), &shaderOk);
+        if (!shaderOk) {
+            *errorMessage = QStringLiteral("Unknown interaction shader effect: %1")
+                .arg(interactionObject.value(QStringLiteral("shader_effect")).toString());
+            return false;
+        }
+    }
+
+    if (interactionObject.contains(QStringLiteral("shader_duration_ms"))) {
+        if (!interactionObject.value(QStringLiteral("shader_duration_ms")).isDouble()) {
+            *errorMessage = QStringLiteral("Field shader_duration_ms must be a number");
+            return false;
+        }
+        interaction->shaderDurationMs = interactionObject.value(QStringLiteral("shader_duration_ms")).toInt();
+    }
+
     if (!parseBoolWrites(interactionObject, QStringLiteral("set_bool"), &interaction->boolWrites, errorMessage)) {
         return false;
     }
@@ -757,6 +855,29 @@ StoryLoadResult StoryLoader::loadFromFile(const QString &filePath)
 
         if (!parseConditionalBackgrounds(sceneObject, QStringLiteral("background_variants"), &scene.backgroundVariants, &result.errorMessage)) {
             return result;
+        }
+
+        if (sceneObject.contains(QStringLiteral("shader_effect"))) {
+            if (!sceneObject.value(QStringLiteral("shader_effect")).isString()) {
+                result.errorMessage = QStringLiteral("Invalid shader_effect field in scene: %1").arg(scene.id);
+                return result;
+            }
+
+            bool shaderOk = false;
+            scene.shaderEffect = parseShaderEffect(sceneObject.value(QStringLiteral("shader_effect")).toString(), &shaderOk);
+            if (!shaderOk) {
+                result.errorMessage = QStringLiteral("Unknown shader effect in scene: %1").arg(scene.id);
+                return result;
+            }
+        }
+
+        if (sceneObject.contains(QStringLiteral("auto_advance_duration_ms"))) {
+            if (!sceneObject.value(QStringLiteral("auto_advance_duration_ms")).isDouble()) {
+                result.errorMessage = QStringLiteral("Invalid auto_advance_duration_ms field in scene: %1").arg(scene.id);
+                return result;
+            }
+
+            scene.autoAdvanceDurationMs = sceneObject.value(QStringLiteral("auto_advance_duration_ms")).toInt();
         }
 
         result.scenes.insert(scene.id, scene);

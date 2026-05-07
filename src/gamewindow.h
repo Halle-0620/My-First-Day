@@ -5,14 +5,25 @@
 #include "ui/backgroundwidget.h"
 #include "ui/interactiontypes.h"
 
+#include <QHash>
+#include <QList>
 #include <QMainWindow>
+#include <QPixmap>
 #include <QString>
 #include <QStringList>
 
+class QElapsedTimer;
 class DialoguePanel;
+class AudioManager;
+class AudioTestDialog;
 class QLabel;
 class QKeyEvent;
+class QPixmap;
+class QPushButton;
+class QResizeEvent;
+class ShaderToyWidget;
 class QTimer;
+struct NarrativeViewState;
 
 class GameWindow : public QMainWindow
 {
@@ -41,27 +52,95 @@ public:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     void advanceNarrative();
     void advanceAutoNarrative();
+    void advanceCenterTextTypewriter();
+    void stopAmbientAfterBgmLeadIn();
     void handleInteractionTriggered(const QString &id);
     void applyNarrativeState();
+    void openAudioTestDialog();
+    void completeLinglingHugPortrait();
+    void handleContinueButtonClicked();
+    void handleInteractionButtonClicked(const QString &id);
+    void startPendingBgm();
 
 private:
     void buildUi();
+    void loadAudioManifest();
     void loadStoryContent();
+    void syncAmbientAudio(const NarrativeViewState &state);
+    void syncBgmAudio(const NarrativeViewState &state, bool sceneChanged);
+    void playConfiguredSceneEntrySounds(const NarrativeViewState &state, bool sceneChanged);
+    void playTextBlipIfNeeded(const QString &text);
+    void playUiClickSound();
     void setHeaderText(const QString &text);
     void setCenterText(const QString &text);
     void clearCenterText();
-    void scheduleAutoAdvance(const QString &text);
+    void startCenterTextTypewriter(const QString &text, int intervalMs = 42);
+    void stopCenterTextTypewriter();
+    void setPagedText(const QString &text, bool showContinue);
+    bool showNextTextFrame();
+    void clearPagedText();
+    void refreshPagedText();
+    void updateDialoguePanelBounds(bool hasInteractions);
+    void updateCharacterPortrait(const NarrativeViewState &state);
+    void updateCharacterPortraitGeometry(const QPixmap &portrait);
+    void scheduleAutoAdvance(const NarrativeViewState &state);
+    void setShaderEffect(ShaderEffect effect);
+    QStringList buildCustomTextFrames(const QString &text) const;
+    QPixmap resolveCharacterPortrait(const QString &characterId);
+    QPixmap resolveBackgroundPixmap(BackgroundStyle style);
+    bool shouldSuppressAmbientForState(const NarrativeViewState &state) const;
+    bool isMessageNotificationScene(const QString &sceneId) const;
+    void showMessageNotificationMode(const QString &text);
+    void resetMessageNotificationOverlay();
+    void revealNextMessageNotification();
+    void completeMessageNotificationSequence();
+    void advanceMessageNotificationScene();
+    void updateMessageNotificationGeometry();
+    void layoutMessageNotificationRows();
 
     BackgroundWidget *m_backgroundWidget;
+    ShaderToyWidget *m_shaderWidget;
+    QLabel *m_characterPortraitLabel;
     DialoguePanel *m_dialoguePanel;
     QLabel *m_centerTextLabel;
     QLabel *m_headerLabel;
+    QWidget *m_messageNotificationOverlay;
+    QWidget *m_messageNotificationCard;
+    QWidget *m_messageNotificationMessagesWidget;
+    QPushButton *m_messageNotificationContinueButton;
+    AudioManager *m_audioManager;
+    AudioTestDialog *m_audioTestDialog;
     NarrativeEngine *m_narrativeEngine;
     QTimer *m_autoAdvanceTimer;
+    QTimer *m_bgmStartDelayTimer;
+    QTimer *m_ambStopAfterBgmTimer;
+    QTimer *m_centerTextTypewriterTimer;
+    QTimer *m_messageNotificationTimer;
+    QTimer *m_linglingHugPortraitTimer;
+    QElapsedTimer *m_textBlipThrottleTimer;
+    QHash<int, QPixmap> m_backgroundCache;
+    QHash<QString, QPixmap> m_characterPortraitCache;
+    NarrativeViewState *m_lastNarrativeViewState;
+    QString m_activeSceneId;
+    QString m_pendingBgmAudioId;
+    QString m_centerTextTarget;
+    QString m_sourceText;
+    QStringList m_textFrames;
+    QStringList m_messageNotificationTexts;
+    QList<QWidget *> m_messageNotificationBubbles;
+    int m_currentTextFrameIndex;
+    int m_centerTextVisibleCharacters;
+    int m_messageNotificationIndex;
+    bool m_centerTextFrameMode;
+    bool m_scene8EnterPromptExpanded;
+    bool m_linglingHugPortraitCompleted;
+    bool m_messageNotificationAwaitingContinue;
+    qint64 m_lastTextBlipMs;
 };
 
 #endif // GAMEWINDOW_H

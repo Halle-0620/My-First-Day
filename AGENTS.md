@@ -4,7 +4,6 @@
 
 每次修改前必须先阅读：
 - docs/design.md
-- docs/tasks.md
 
 开发原则：
 - 不要擅自改剧情设定
