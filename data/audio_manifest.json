@@ -50,9 +50,16 @@
       "volume": 0.72
     },
     {
+      "id": "bgm_haidi",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/海底.mp3",
+      "loop": true,
+      "volume": 0.5
+    },
+    {
       "id": "amb_classroom_evening_hallway",
       "category": "amb",
-      "path": "../assets/audio/amb/amb_classroom_evening__and_hallway_looploop.wav.mp3",
+      "path": "../assets/audio/amb/amb_classroom_evening_and_hallway_loop.wav.mp3",
       "loop": true,
       "volume": 0.55
     },
@@ -66,14 +73,14 @@
     {
       "id": "amb_classroom_night",
       "category": "amb",
-      "path": "../assets/audio/amb/amb_classroom_night_loop.wav.mp3",
+      "path": "../assets/audio/amb/amb_classroom_night_loopc_chalk.wav.mp3",
       "loop": true,
       "volume": 0.55
     },
     {
       "id": "amb_classroom_night_loop",
       "category": "amb",
-      "path": "../assets/audio/amb/amb_classroom_night_loop.wav.mp3",
+      "path": "../assets/audio/amb/amb_classroom_night_loopc_chalk.wav.mp3",
       "loop": true,
       "volume": 0.55
     },
@@ -86,6 +93,13 @@
     },
     {
       "id": "amb_hidden_place_night",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_hidden_place_night_loop.wav.mp3",
+      "loop": true,
+      "volume": 0.55
+    },
+    {
+      "id": "amb_hidden_place_night_loop",
       "category": "amb",
       "path": "../assets/audio/amb/amb_hidden_place_night_loop.wav.mp3",
       "loop": true,
@@ -171,7 +185,7 @@
     {
       "id": "sfx_sink_water",
       "category": "sfx",
-      "path": "../assets/audio/sfx/sfx_sink_water.wav.mp3",
+      "path": "../assets/audio/sfx/sfx_sink_water.mp3",
       "loop": false,
       "volume": 0.68
     },
@@ -216,6 +230,48 @@
       "path": "../assets/audio/emo/emo_score_low_rumble.wav.mp3",
       "loop": false,
       "volume": 0.68
+    },
+    {
+      "id": "bgm_dream_air_walk",
+      "category": "bgm",
+      "path": "../assets/audio/bgm/bgm_dream_air_walk.mp3",
+      "loop": true,
+      "volume": 0.62
+    },
+    {
+      "id": "amb_classroom_muffled",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_classroom_muffled.mp3",
+      "loop": true,
+      "volume": 0.42
+    },
+    {
+      "id": "amb_dream_air",
+      "category": "amb",
+      "path": "../assets/audio/amb/amb_dream_air.mp3",
+      "loop": true,
+      "volume": 0.42
+    },
+    {
+      "id": "sfx_dream_whoosh_soft",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_dream_whoosh_soft.mp3",
+      "loop": false,
+      "volume": 0.62
+    },
+    {
+      "id": "sfx_paper_fragment",
+      "category": "sfx",
+      "path": "../assets/audio/sfx/sfx_paper_fragment.mp3",
+      "loop": false,
+      "volume": 0.56
+    },
+    {
+      "id": "emo_dream_fall_low",
+      "category": "emo",
+      "path": "../assets/audio/emo/emo_dream_fall_low.mp3",
+      "loop": false,
+      "volume": 0.7
     }
   ]
 }

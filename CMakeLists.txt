@@ -36,6 +36,8 @@ qt_add_executable(MyFirstDay
     src/ui/backgroundwidget.h
     src/ui/dialoguepanel.cpp
     src/ui/dialoguepanel.h
+    src/ui/floatingchoicelayer.cpp
+    src/ui/floatingchoicelayer.h
     src/ui/interactiontypes.h
     src/ui/shadertoywidget.cpp
     src/ui/shadertoywidget.h
@@ -60,5 +62,26 @@ endif()
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/data")
 configure_file("${CMAKE_SOURCE_DIR}/data/story_main.json" "${CMAKE_BINARY_DIR}/data/story_main.json" COPYONLY)
 configure_file("${CMAKE_SOURCE_DIR}/data/audio_manifest.json" "${CMAKE_BINARY_DIR}/data/audio_manifest.json" COPYONLY)
+# configure_file runs only at CMake configure time. This stamp rule re-copies JSON when the
+# sources change, even if `cmake --build` would otherwise do no C++ work (ninja: no work to do).
+set(_DATA_JSON_STAMP "${CMAKE_BINARY_DIR}/data/.data_json_sync_stamp")
+add_custom_command(
+    OUTPUT "${_DATA_JSON_STAMP}"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/data/story_main.json"
+        "${CMAKE_BINARY_DIR}/data/story_main.json"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/data/audio_manifest.json"
+        "${CMAKE_BINARY_DIR}/data/audio_manifest.json"
+    COMMAND "${CMAKE_COMMAND}" -E touch "${_DATA_JSON_STAMP}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/data/story_main.json"
+        "${CMAKE_SOURCE_DIR}/data/audio_manifest.json"
+    COMMENT "Syncing data/*.json into build directory"
+    VERBATIM
+)
+add_custom_target(data_json_sync DEPENDS "${_DATA_JSON_STAMP}")
+add_dependencies(MyFirstDay data_json_sync)
 file(COPY "${CMAKE_SOURCE_DIR}/assets/audio" DESTINATION "${CMAKE_BINARY_DIR}/assets")
+file(COPY "${CMAKE_SOURCE_DIR}/assets/shaders" DESTINATION "${CMAKE_BINARY_DIR}/assets")
 file(COPY "${CMAKE_SOURCE_DIR}/图" DESTINATION "${CMAKE_BINARY_DIR}")

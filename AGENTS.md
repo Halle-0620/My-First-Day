@@ -2,17 +2,10 @@
 
 这是一个 Qt Widgets 视觉小说 / 叙事互动 Demo。
 
+## 必读文件
+
 每次修改前必须先阅读：
-- docs/design.md
 
-开发原则：
-- 不要擅自改剧情设定
-- 不要加入策划书里没有的新系统
-- 每次只完成一个明确任务
-- 修改后说明改了哪些文件、如何验证
-
-技术优先级：
-1. 能跑起来
-2. 场景可推进
-3. 变量可记录
-4. 文本可数据驱动
+1. docs/design.md
+2.C:\Users\28928\Desktop\My First Day\ui_tasks.md
+3.C:\Users\28928\Desktop\My First Day\ui_status.md

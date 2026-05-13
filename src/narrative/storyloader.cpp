@@ -21,6 +21,18 @@ ShaderEffect parseShaderEffect(const QString &value, bool *ok)
         *ok = true;
         return ShaderEffect::TokyoRain;
     }
+    if (value == QStringLiteral("dream_sleep_blur")) {
+        *ok = true;
+        return ShaderEffect::DreamSleepBlur;
+    }
+    if (value == QStringLiteral("dream_fall")) {
+        *ok = true;
+        return ShaderEffect::DreamFall;
+    }
+    if (value == QStringLiteral("dream_future")) {
+        *ok = true;
+        return ShaderEffect::DreamFuture;
+    }
 
     *ok = false;
     return ShaderEffect::None;
@@ -47,6 +59,14 @@ BackgroundStyle parseBackgroundStyle(const QString &value, bool *ok)
     if (value == QStringLiteral("desk_night")) {
         *ok = true;
         return BackgroundStyle::DeskNight;
+    }
+    if (value == QStringLiteral("beginning")) {
+        *ok = true;
+        return BackgroundStyle::Beginning;
+    }
+    if (value == QStringLiteral("beginning_blur")) {
+        *ok = true;
+        return BackgroundStyle::BeginningBlur;
     }
     if (value == QStringLiteral("hallway")) {
         *ok = true;
@@ -108,6 +128,10 @@ BackgroundStyle parseBackgroundStyle(const QString &value, bool *ok)
         *ok = true;
         return BackgroundStyle::EndingGlow;
     }
+    if (value == QStringLiteral("ending_white")) {
+        *ok = true;
+        return BackgroundStyle::EndingWhite;
+    }
     if (value == QStringLiteral("ending_black")) {
         *ok = true;
         return BackgroundStyle::EndingBlack;
@@ -115,6 +139,18 @@ BackgroundStyle parseBackgroundStyle(const QString &value, bool *ok)
     if (value == QStringLiteral("dream_drift")) {
         *ok = true;
         return BackgroundStyle::DreamDrift;
+    }
+    if (value == QStringLiteral("dream_faraway")) {
+        *ok = true;
+        return BackgroundStyle::DreamFaraway;
+    }
+    if (value == QStringLiteral("dream_companion")) {
+        *ok = true;
+        return BackgroundStyle::DreamCompanion;
+    }
+    if (value == QStringLiteral("dream_creation")) {
+        *ok = true;
+        return BackgroundStyle::DreamCreation;
     }
     if (value == QStringLiteral("message_1")) {
         *ok = true;
@@ -565,6 +601,14 @@ bool parseInteraction(const QJsonObject &interactionObject,
     if (!ok) {
         *errorMessage = QStringLiteral("Unknown interaction type: %1").arg(typeString);
         return false;
+    }
+
+    if (interactionObject.contains(QStringLiteral("enabled"))) {
+        if (!interactionObject.value(QStringLiteral("enabled")).isBool()) {
+            *errorMessage = QStringLiteral("Field interactions.enabled must be a bool");
+            return false;
+        }
+        interaction->enabled = interactionObject.value(QStringLiteral("enabled")).toBool();
     }
 
     if (interactionObject.contains(QStringLiteral("next"))) {

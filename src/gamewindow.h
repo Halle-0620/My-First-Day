@@ -14,10 +14,13 @@
 
 class QElapsedTimer;
 class DialoguePanel;
+class FloatingChoiceLayer;
 class AudioManager;
 class AudioTestDialog;
+class QGraphicsOpacityEffect;
 class QLabel;
 class QKeyEvent;
+class QPropertyAnimation;
 class QPixmap;
 class QPushButton;
 class QResizeEvent;
@@ -69,6 +72,11 @@ private slots:
 
 private:
     void buildUi();
+    void buildTitleScreen();
+    void showTitleScreen();
+    void updateTitleScreenGeometry();
+    void startGameFromTitle();
+    void finishTitleScreenTransition();
     void loadAudioManifest();
     void loadStoryContent();
     void syncAmbientAudio(const NarrativeViewState &state);
@@ -81,11 +89,13 @@ private:
     void clearCenterText();
     void startCenterTextTypewriter(const QString &text, int intervalMs = 42);
     void stopCenterTextTypewriter();
+    void updateCenterTextAppearance();
     void setPagedText(const QString &text, bool showContinue);
     bool showNextTextFrame();
     void clearPagedText();
     void refreshPagedText();
-    void updateDialoguePanelBounds(bool hasInteractions);
+    void updateDialoguePanelBounds(bool hasInteractions, int interactionCount = 0);
+    void updateFloatingChoiceLayerGeometry();
     void updateCharacterPortrait(const NarrativeViewState &state);
     void updateCharacterPortraitGeometry(const QPixmap &portrait);
     void scheduleAutoAdvance(const NarrativeViewState &state);
@@ -93,6 +103,7 @@ private:
     QStringList buildCustomTextFrames(const QString &text) const;
     QPixmap resolveCharacterPortrait(const QString &characterId);
     QPixmap resolveBackgroundPixmap(BackgroundStyle style);
+    QPixmap resolveTitleCoverPixmap() const;
     bool shouldSuppressAmbientForState(const NarrativeViewState &state) const;
     bool isMessageNotificationScene(const QString &sceneId) const;
     void showMessageNotificationMode(const QString &text);
@@ -102,13 +113,38 @@ private:
     void advanceMessageNotificationScene();
     void updateMessageNotificationGeometry();
     void layoutMessageNotificationRows();
+    void updateDreamFadeGeometry();
+    void clearDreamFade();
+    void startDreamFade(qreal startOpacity, qreal endOpacity, int durationMs);
+    void applyDreamPresentation(const NarrativeViewState &state, bool sceneChanged);
+    void applyDreamShaderBinding(const NarrativeViewState &state);
+    void setDreamShaderOverlayEnabled(bool enabled);
+    void setDreamShaderOverlayFile(const QString &shaderFilePath);
+    void setDreamShaderOverlayUseNoiseTexture(bool useNoiseTexture);
+    void clearDreamShaderOverlay();
+    QString displayHeaderText(const QString &text) const;
+    QString displaySpeakerName(const QString &speaker) const;
+    QString displayCenterText(const QString &text) const;
+    bool isColdOpenCenterTextScene(const QString &sceneId) const;
+    bool shouldUseFloatingChoiceLayer(InteractionMode mode, const InteractionItems &items) const;
+    void showFloatingChoiceLayer(const InteractionItems &items);
+    void hideFloatingChoiceLayer();
 
     BackgroundWidget *m_backgroundWidget;
+    QWidget *m_dreamFadeOverlay;
+    QGraphicsOpacityEffect *m_dreamFadeEffect;
+    QPropertyAnimation *m_dreamFadeAnimation;
     ShaderToyWidget *m_shaderWidget;
     QLabel *m_characterPortraitLabel;
     DialoguePanel *m_dialoguePanel;
+    FloatingChoiceLayer *m_floatingChoiceLayer;
     QLabel *m_centerTextLabel;
     QLabel *m_headerLabel;
+    QWidget *m_titleScreenOverlay;
+    QLabel *m_titleBackgroundLabel;
+    QPushButton *m_titleStartButton;
+    QGraphicsOpacityEffect *m_titleScreenEffect;
+    QPropertyAnimation *m_titleScreenFadeAnimation;
     QWidget *m_messageNotificationOverlay;
     QWidget *m_messageNotificationCard;
     QWidget *m_messageNotificationMessagesWidget;
@@ -125,6 +161,7 @@ private:
     QElapsedTimer *m_textBlipThrottleTimer;
     QHash<int, QPixmap> m_backgroundCache;
     QHash<QString, QPixmap> m_characterPortraitCache;
+    QPixmap m_titleCoverPixmap;
     NarrativeViewState *m_lastNarrativeViewState;
     QString m_activeSceneId;
     QString m_pendingBgmAudioId;
@@ -140,6 +177,8 @@ private:
     bool m_scene8EnterPromptExpanded;
     bool m_linglingHugPortraitCompleted;
     bool m_messageNotificationAwaitingContinue;
+    bool m_titleScreenActive;
+    bool m_titleScreenTransitioning;
     qint64 m_lastTextBlipMs;
 };
 

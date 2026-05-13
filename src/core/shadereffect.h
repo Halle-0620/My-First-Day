@@ -4,7 +4,10 @@
 enum class ShaderEffect {
     None,
     DriveHome,
-    TokyoRain
+    TokyoRain,
+    DreamSleepBlur,
+    DreamFall,
+    DreamFuture
 };
 
 #endif // SHADEREFFECT_H

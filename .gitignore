@@ -1,6 +1,7 @@
 # Local editor and workspace state
 .cursor/
 .idea/
+.vs/
 .vscode/
 *.user
 *.suo
@@ -18,6 +19,9 @@
 
 # Build outputs and caches
 build/
+build-*/
+Debug/
+Release/
 dist/
 out/
 bin/
@@ -29,6 +33,15 @@ coverage/
 *.o
 *.dll
 *.exe
+*.ilk
+*.pdb
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+moc_*
+qrc_*
+ui_*
 
 # Python / Node caches
 __pycache__/

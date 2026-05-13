@@ -9,6 +9,7 @@
 class QLabel;
 class QPushButton;
 class QGridLayout;
+class QVBoxLayout;
 class QPaintEvent;
 class QResizeEvent;
 
@@ -38,6 +39,7 @@ public:
     void setDialogueVisible(bool visible);
     bool isContinueVisible() const;
     bool hasVisibleInteractions() const;
+    int visibleInteractionCount() const;
     void focusFirstInteraction();
     QStringList paginateTextFrames(const QString &text, int maxLinesPerFrame = 1) const;
 
@@ -60,6 +62,8 @@ private:
 
     QLabel *m_nameLabel;
     QLabel *m_textBox;
+    QWidget *m_contentContainer;
+    QVBoxLayout *m_contentLayout;
     QWidget *m_interactionContainer;
     QGridLayout *m_interactionLayout;
     QPushButton *m_continueButton;

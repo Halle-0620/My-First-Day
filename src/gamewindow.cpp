@@ -5,28 +5,132 @@
 #include "narrative/samplestory.h"
 #include "narrative/storyloader.h"
 #include "ui/dialoguepanel.h"
+#include "ui/floatingchoicelayer.h"
 #include "ui/shadertoywidget.h"
 
 #include <QAction>
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
+#include <QEasingCurve>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QImage>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QLayout>
 #include <QMenuBar>
 #include <QPixmap>
 #include <QPushButton>
 #include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
 #include <QPropertyAnimation>
+#include <QRegularExpression>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
 namespace {
+
+bool isDreamHoverChoiceSceneId(const QString &sceneId)
+{
+    return sceneId.startsWith(QStringLiteral("scene7b_dream_hover_"))
+        || sceneId.startsWith(QStringLiteral("dream_3_future_choice"));
+}
+
+bool isDreamFutureChoiceSceneId(const QString &sceneId)
+{
+    return sceneId.startsWith(QStringLiteral("dream_3_future_choice"));
+}
+
+bool isDreamSceneId(const QString &sceneId)
+{
+    return sceneId.startsWith(QStringLiteral("scene7b_dream_"))
+        || sceneId.startsWith(QStringLiteral("dream_"));
+}
+
+bool isNewDreamSceneId(const QString &sceneId)
+{
+    return sceneId.startsWith(QStringLiteral("dream_"));
+}
+
+bool usesDreamFutureShader(const QString &sceneId)
+{
+    return sceneId == QStringLiteral("dream_2_suspend");
+}
+
+bool isColdOpenMuffledSceneId(const QString &sceneId)
+{
+    return sceneId.startsWith(QStringLiteral("cold_open_1_"))
+        || sceneId.startsWith(QStringLiteral("cold_open_2_"))
+        || sceneId.startsWith(QStringLiteral("cold_open_3_"))
+        || sceneId.startsWith(QStringLiteral("cold_open_4_"));
+}
+
+bool isColdOpenLinglingPortraitSceneId(const QString &sceneId)
+{
+    return sceneId == QStringLiteral("cold_open_3_lingling");
+}
+
+bool looksLikeInternalHeaderId(const QString &text)
+{
+    static const QRegularExpression internalIdPattern(QStringLiteral("^[A-Za-z0-9_\\-]+$"));
+    return internalIdPattern.match(text).hasMatch();
+}
+
+QString stripSceneNumberPrefix(const QString &header)
+{
+    static const QRegularExpression numberedHeaderPattern(
+        QString::fromUtf8(u8"^鍦烘櫙[^/]+/\\s*"));
+    QString cleaned = header;
+    cleaned.remove(numberedHeaderPattern);
+    return cleaned.trimmed();
+}
+
+int dreamAutoFrameDurationMs(const QString &sceneId)
+{
+    if (sceneId == QStringLiteral("dream_0_sleep")) {
+        return 1900;
+    }
+    if (sceneId == QStringLiteral("dream_1_fall")) {
+        return 1450;
+    }
+    if (sceneId == QStringLiteral("dream_2_suspend")) {
+        return 1850;
+    }
+    if (sceneId == QStringLiteral("dream_3_future_far")
+        || sceneId == QStringLiteral("dream_3_future_together")
+        || sceneId == QStringLiteral("dream_3_future_create")) {
+        return 1850;
+    }
+    if (sceneId == QStringLiteral("dream_4_end")) {
+        return 2000;
+    }
+    if (sceneId == QStringLiteral("dream_5_wake")) {
+        return 1700;
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_sleep")) {
+        return 2600;
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_fall")) {
+        return 1250;
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_hover_intro")) {
+        return 2100;
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_close")) {
+        return 2200;
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_fragment_return")) {
+        return 1;
+    }
+    if (sceneId.startsWith(QStringLiteral("scene7b_dream_fragment_"))) {
+        return 1900;
+    }
+
+    return 0;
+}
 
 QPixmap trimTransparentMargins(const QPixmap &pixmap)
 {
@@ -65,48 +169,58 @@ QStringList imageNamesForBackground(BackgroundStyle style)
 {
     switch (style) {
     case BackgroundStyle::DeskDusk:
-        return {QString::fromUtf8(u8"课桌图(傍晚）.png")};
+        return {QString::fromUtf8(u8"璇炬鍥?鍌嶆櫄锛?png")};
     case BackgroundStyle::DeskNight:
-        return {QString::fromUtf8(u8"课桌图（晚上）.png")};
+        return {QString::fromUtf8(u8"璇炬鍥撅紙鏅氫笂锛?png")};
+    case BackgroundStyle::Beginning:
+        return {QString::fromUtf8(u8"璇炬鍥撅紙beginning锛?png")};
+    case BackgroundStyle::BeginningBlur:
+        return {QString::fromUtf8(u8"璇炬鍥撅紙beginning_blur锛?png")};
     case BackgroundStyle::Hallway:
-        return {QString::fromUtf8(u8"楼道图.png")};
+        return {QString::fromUtf8(u8"妤奸亾鍥?png")};
     case BackgroundStyle::TreeUnder:
-        return {QString::fromUtf8(u8"树下.png")};
+        return {QString::fromUtf8(u8"鏍戜笅.png")};
     case BackgroundStyle::GymBack:
-        return {QString::fromUtf8(u8"体育馆.png")};
+        return {QString::fromUtf8(u8"浣撹偛棣?png")};
     case BackgroundStyle::Office:
-        return {QString::fromUtf8(u8"办公室.png")};
+        return {QString::fromUtf8(u8"鍔炲叕瀹?png")};
     case BackgroundStyle::Toilet:
-        return {QString::fromUtf8(u8"厕所.png")};
+        return {QString::fromUtf8(u8"鍘曟墍.png")};
     case BackgroundStyle::Dismissal:
-        return {QString::fromUtf8(u8"放学.png")};
+        return {QString::fromUtf8(u8"鏀惧.png")};
     case BackgroundStyle::SchoolGate:
-        return {QString::fromUtf8(u8"校门口.png")};
+        return {QString::fromUtf8(u8"鏍￠棬鍙?png")};
     case BackgroundStyle::Ebike:
-        return {QString::fromUtf8(u8"电瓶车上.png")};
+        return {QString::fromUtf8(u8"鐢电摱杞︿笂.png")};
     case BackgroundStyle::Home:
-        return {QString::fromUtf8(u8"家里.png")};
+        return {QString::fromUtf8(u8"瀹堕噷.png")};
     case BackgroundStyle::ClassroomDusk:
-        return {QString::fromUtf8(u8"课桌图(傍晚）.png")};
+        return {QString::fromUtf8(u8"璇炬鍥?鍌嶆櫄锛?png")};
     case BackgroundStyle::QuietHallway:
-        return {QString::fromUtf8(u8"楼道图.png")};
+        return {QString::fromUtf8(u8"妤奸亾鍥?png")};
     case BackgroundStyle::ChoiceFocus:
-        return {QString::fromUtf8(u8"课桌图（晚上）.png")};
+        return {QString::fromUtf8(u8"璇炬鍥撅紙鏅氫笂锛?png")};
     case BackgroundStyle::SoftNarration:
-        return {QString::fromUtf8(u8"课桌图（晚上）.png")};
+        return {QString::fromUtf8(u8"璇炬鍥撅紙鏅氫笂锛?png")};
     case BackgroundStyle::NightRain:
-        return {QString::fromUtf8(u8"电瓶车上.png")};
+        return {QString::fromUtf8(u8"鐢电摱杞︿笂.png")};
     case BackgroundStyle::EndingGlow:
-        return {QString::fromUtf8(u8"树下.png"), QString::fromUtf8(u8"体育馆.png")};
+    case BackgroundStyle::EndingWhite:
     case BackgroundStyle::EndingBlack:
     case BackgroundStyle::DreamDrift:
         return {};
+    case BackgroundStyle::DreamFaraway:
+        return {QString::fromUtf8(u8"姊?杩滄柟.png")};
+    case BackgroundStyle::DreamCompanion:
+        return {QString::fromUtf8(u8"姊?鏈嬪弸.png")};
+    case BackgroundStyle::DreamCreation:
+        return {QString::fromUtf8(u8"姊?鍒涗綔.png")};
     case BackgroundStyle::Message1:
-        return {QString::fromUtf8(u8"消息1.png")};
+        return {QString::fromUtf8(u8"娑堟伅1.png")};
     case BackgroundStyle::Message2:
-        return {QString::fromUtf8(u8"消息2.png")};
+        return {QString::fromUtf8(u8"娑堟伅2.png")};
     case BackgroundStyle::Message3:
-        return {QString::fromUtf8(u8"消息3.png")};
+        return {QString::fromUtf8(u8"娑堟伅3.png")};
     }
 
     return {};
@@ -122,9 +236,86 @@ QStringList backgroundSearchRoots()
     };
 }
 
+QString resolveTitleCoverFilePath()
+{
+    for (const QString &root : backgroundSearchRoots()) {
+        const QString candidate = QDir(root).filePath(QString::fromUtf8(u8"灏侀潰.png"));
+        if (QFileInfo::exists(candidate)) {
+            return candidate;
+        }
+    }
+
+    return {};
+}
+
+QString resolveDreamShaderFilePath(const QString &fileName)
+{
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidateRoots = {
+        QDir(appDir).filePath(QStringLiteral("assets/shaders")),
+        QDir(appDir).filePath(QStringLiteral("../assets/shaders")),
+        QDir(appDir).filePath(QStringLiteral("../../assets/shaders"))
+    };
+
+    for (const QString &root : candidateRoots) {
+        if (!QFileInfo::exists(root)) {
+            continue;
+        }
+
+        QDirIterator it(root,
+                        QStringList{fileName},
+                        QDir::Files,
+                        QDirIterator::Subdirectories);
+        if (it.hasNext()) {
+            return it.next();
+        }
+    }
+
+    return {};
+}
+
 QString ambientAudioIdForScene(const QString &sceneId)
 {
     if (sceneId == QStringLiteral("scene9_bell")) {
+        return {};
+    }
+
+    if (sceneId == QStringLiteral("dream_0_sleep")) {
+        return {};
+    }
+    if (sceneId == QStringLiteral("dream_2_suspend")
+        || sceneId.startsWith(QStringLiteral("dream_3_future_"))
+        || sceneId == QStringLiteral("dream_4_end")) {
+        return QStringLiteral("amb_dream_air");
+    }
+    if (sceneId == QStringLiteral("dream_5_wake")) {
+        return {};
+    }
+
+    if (sceneId == QStringLiteral("cold_open_5_after")) {
+        return QStringLiteral("amb_classroom_night_loopc_study");
+    }
+
+    if (sceneId.startsWith(QStringLiteral("cold_open_0_"))) {
+        return QStringLiteral("amb_classroom_night_loopc_study");
+    }
+
+    if (sceneId.startsWith(QStringLiteral("cold_open_6_"))) {
+        return {};
+    }
+
+    if (sceneId.startsWith(QStringLiteral("cold_open_"))) {
+        return QStringLiteral("amb_classroom_night_loopc_study");
+    }
+
+    if (sceneId == QStringLiteral("scene7b_dream_wake")) {
+        return QStringLiteral("amb_classroom_night_loopc_study");
+    }
+
+    if (sceneId.startsWith(QStringLiteral("scene7b_dream_"))) {
+        if (sceneId == QStringLiteral("scene7b_dream_sleep")) {
+            return QStringLiteral("amb_classroom_evening_and_hallway_loop");
+        }
         return {};
     }
 
@@ -142,7 +333,7 @@ QString ambientAudioIdForScene(const QString &sceneId)
     }
 
     if (sceneId.startsWith(QStringLiteral("scene4_"))) {
-        return QStringLiteral("amb_classroom_evening_and_hallway_loop");
+        return QStringLiteral("amb_classroom_night_loop");
     }
 
     if (sceneId.startsWith(QStringLiteral("scene5_"))) {
@@ -153,7 +344,16 @@ QString ambientAudioIdForScene(const QString &sceneId)
         return QStringLiteral("amb_classroom_evening_and_hallway_loop");
     }
 
-    if (sceneId == QStringLiteral("scene7a_opening")
+    if (sceneId == QStringLiteral("scene7a_walk_1")
+        || sceneId == QStringLiteral("scene7a_walk_2")
+        || sceneId == QStringLiteral("scene7a_walk_3")
+        || sceneId == QStringLiteral("scene7a_opening")
+        || sceneId == QStringLiteral("scene7a_opening_grade_feedback")
+        || sceneId == QStringLiteral("scene7a_opening_unexpected_feedback")
+        || sceneId == QStringLiteral("scene7a_opening_breakdown_feedback")
+        || sceneId == QStringLiteral("scene7a_lingling_slows")
+        || sceneId == QStringLiteral("scene7a_tears_begin")
+        || sceneId == QStringLiteral("scene7a_tears_fall")
         || sceneId == QStringLiteral("scene7a_hide_place")) {
         return QStringLiteral("amb_playground_night");
     }
@@ -163,11 +363,11 @@ QString ambientAudioIdForScene(const QString &sceneId)
         || sceneId == QStringLiteral("scene7a_comfort")
         || sceneId == QStringLiteral("scene7a_comfort_2")
         || sceneId == QStringLiteral("scene7a_comfort_3")) {
-        return QStringLiteral("amb_hidden_place_night");
+        return QStringLiteral("amb_hidden_place_night_loop");
     }
 
     if (sceneId.startsWith(QStringLiteral("scene7b_"))) {
-        return QStringLiteral("amb_classroom_evening_and_hallway_loop");
+        return QStringLiteral("amb_classroom_night_loopc_study");
     }
 
     if (sceneId.startsWith(QStringLiteral("scene8_"))) {
@@ -175,7 +375,7 @@ QString ambientAudioIdForScene(const QString &sceneId)
     }
 
     if (sceneId.startsWith(QStringLiteral("scene9_"))) {
-        return QStringLiteral("amb_classroom_evening_and_hallway_loop");
+        return QStringLiteral("amb_classroom_night_loopc_study");
     }
 
     if (sceneId.startsWith(QStringLiteral("scene10_"))) {
@@ -193,7 +393,18 @@ QString ambientAudioIdForScene(const QString &sceneId)
 QString bgmAudioIdForScene(const NarrativeViewState &state, const GameState &gameState)
 {
     const QString &sceneId = state.sceneId;
-    const bool stayedInClassroomRoute = !gameState.boolValue(QStringLiteral("went_downstairs"));
+    const bool dreamRoute = gameState.stringValue(QStringLiteral("side_route_mode")) == QString::fromUtf8(u8"姊﹀");
+    const bool stayedInClassroomRoute = !gameState.boolValue(QStringLiteral("went_downstairs")) && !dreamRoute;
+
+    if (sceneId == QStringLiteral("dream_2_suspend")
+        || sceneId.startsWith(QStringLiteral("dream_3_future_"))
+        || sceneId == QStringLiteral("dream_4_end")) {
+        return QStringLiteral("bgm_dream_air_walk");
+    }
+
+    if (sceneId.startsWith(QStringLiteral("cold_open_"))) {
+        return QStringLiteral("bgm_haidi");
+    }
 
     if (sceneId.startsWith(QStringLiteral("scene1_"))
         || state.sceneId.startsWith(QStringLiteral("scene2_"))
@@ -220,10 +431,10 @@ QString bgmAudioIdForScene(const NarrativeViewState &state, const GameState &gam
 
     if (sceneId.startsWith(QStringLiteral("scene10_"))) {
         if (sceneId == QStringLiteral("scene10_song_performance")) {
-            if (!state.text.contains(QString::fromUtf8(u8"然后你开始唱"))) {
+            if (!state.text.contains(QString::fromUtf8(u8"鐒跺悗浣犲紑濮嬪敱"))) {
                 return {};
             }
-            if (gameState.stringValue(QStringLiteral("rain_song_emotion")) == QString::fromUtf8(u8"家庭")) {
+            if (gameState.stringValue(QStringLiteral("rain_song_emotion")) == QString::fromUtf8(u8"瀹跺涵")) {
                 return QStringLiteral("bgm_dont_cry");
             }
             return QStringLiteral("bgm_meiyoulixiang");
@@ -231,7 +442,7 @@ QString bgmAudioIdForScene(const NarrativeViewState &state, const GameState &gam
         if (sceneId == QStringLiteral("scene10_song_release")
             || sceneId == QStringLiteral("scene10_reply")
             || sceneId == QStringLiteral("scene10_arrive")) {
-            if (gameState.stringValue(QStringLiteral("rain_song_emotion")) == QString::fromUtf8(u8"家庭")) {
+            if (gameState.stringValue(QStringLiteral("rain_song_emotion")) == QString::fromUtf8(u8"瀹跺涵")) {
                 return QStringLiteral("bgm_dont_cry");
             }
             return QStringLiteral("bgm_meiyoulixiang");
@@ -255,6 +466,14 @@ QString bgmAudioIdForScene(const NarrativeViewState &state, const GameState &gam
 
 bool shouldDelayBgmStart(const QString &sceneId)
 {
+    if (sceneId == QStringLiteral("dream_2_suspend")) {
+        return false;
+    }
+
+    if (sceneId.startsWith(QStringLiteral("cold_open_0_"))) {
+        return false;
+    }
+
     if (sceneId.startsWith(QStringLiteral("scene4_"))
         || sceneId.startsWith(QStringLiteral("scene10_"))
         || sceneId.startsWith(QStringLiteral("scene11_"))
@@ -275,7 +494,10 @@ bool shouldDelayBgmStart(const QString &sceneId)
 
 bool shouldTypewriteCenterText(const QString &sceneId)
 {
-    return sceneId == QStringLiteral("scene8_breakdown_blackout")
+    return isDreamSceneId(sceneId)
+        || sceneId.startsWith(QStringLiteral("cold_open_0_"))
+        || sceneId.startsWith(QStringLiteral("cold_open_6_"))
+        || sceneId == QStringLiteral("scene8_breakdown_blackout")
         || sceneId == QStringLiteral("scene9_mainline_end")
         || sceneId == QStringLiteral("scene10_song_release")
         || sceneId == QStringLiteral("scene7a_comfort")
@@ -285,7 +507,13 @@ bool shouldTypewriteCenterText(const QString &sceneId)
 
 bool shouldKeepAmbientUnderBgm(const QString &sceneId)
 {
+    if (sceneId.startsWith(QStringLiteral("cold_open_"))) {
+        return true;
+    }
+
     return sceneId.startsWith(QStringLiteral("scene3_"))
+        || sceneId.startsWith(QStringLiteral("scene4_"))
+        || sceneId.startsWith(QStringLiteral("scene5_"))
         || sceneId.startsWith(QStringLiteral("scene10_"))
         || sceneId.startsWith(QStringLiteral("scene11_"));
 }
@@ -321,11 +549,25 @@ QString sceneEntryUiAudioId(const QString &sceneId)
 
 QString sceneEntryEmoAudioId(const QString &sceneId)
 {
+    if (sceneId == QStringLiteral("dream_1_fall")) {
+        return QStringLiteral("emo_dream_fall_low");
+    }
+    if (sceneId == QStringLiteral("cold_open_6_black_retry")) {
+        return QStringLiteral("emo_dream_fall_low");
+    }
+    if (sceneId == QStringLiteral("cold_open_1_score")) {
+        return QStringLiteral("emo_muffled_ring");
+    }
     if (sceneId == QStringLiteral("scene4_score_fall")) {
         return QStringLiteral("emo_score_low_rumble");
     }
-    if (sceneId == QStringLiteral("scene8_teacher_first_sting")
-        || sceneId == QStringLiteral("scene8_after_sting_choice")) {
+    if (sceneId == QStringLiteral("scene7b_dream_sleep")) {
+        return QStringLiteral("emo_muffled_ring");
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_fall")) {
+        return QStringLiteral("emo_score_low_rumble");
+    }
+    if (sceneId == QStringLiteral("scene8_teacher_first_sting")) {
         return QStringLiteral("emo_muffled_ring");
     }
 
@@ -334,10 +576,24 @@ QString sceneEntryEmoAudioId(const QString &sceneId)
 
 QString sceneEntrySfxAudioId(const QString &sceneId)
 {
+    if (sceneId == QStringLiteral("cold_open_0_number")) {
+        return QStringLiteral("sfx_bell");
+    }
     if (sceneId == QStringLiteral("scene8_enter_prompt")) {
         return QStringLiteral("sfx_sink_water");
     }
+    if (sceneId == QStringLiteral("scene3_class_bell")
+        || sceneId == QStringLiteral("scene4_break_bell")
+        || sceneId == QStringLiteral("scene5_period_bell")
+        || sceneId == QStringLiteral("scene6_invitation_bell")
+        || sceneId == QStringLiteral("scene7b_sleep_fail_bell")
+        || sceneId == QStringLiteral("scene10_departure_bell")) {
+        return QStringLiteral("sfx_bell");
+    }
     if (sceneId == QStringLiteral("scene9_bell")) {
+        return QStringLiteral("sfx_bell");
+    }
+    if (sceneId == QStringLiteral("scene7b_dream_wake")) {
         return QStringLiteral("sfx_bell");
     }
 
@@ -349,11 +605,20 @@ QString sceneEntrySfxAudioId(const QString &sceneId)
 GameWindow::GameWindow(QWidget *parent)
     : QMainWindow(parent),
       m_backgroundWidget(nullptr),
+      m_dreamFadeOverlay(nullptr),
+      m_dreamFadeEffect(nullptr),
+      m_dreamFadeAnimation(nullptr),
       m_shaderWidget(nullptr),
       m_characterPortraitLabel(nullptr),
       m_dialoguePanel(nullptr),
+      m_floatingChoiceLayer(nullptr),
       m_centerTextLabel(nullptr),
       m_headerLabel(nullptr),
+      m_titleScreenOverlay(nullptr),
+      m_titleBackgroundLabel(nullptr),
+      m_titleStartButton(nullptr),
+      m_titleScreenEffect(nullptr),
+      m_titleScreenFadeAnimation(nullptr),
       m_audioManager(new AudioManager(this)),
       m_audioTestDialog(nullptr),
       m_narrativeEngine(new NarrativeEngine(this)),
@@ -372,6 +637,8 @@ GameWindow::GameWindow(QWidget *parent)
       m_scene8EnterPromptExpanded(false),
       m_linglingHugPortraitCompleted(false),
       m_messageNotificationAwaitingContinue(false),
+      m_titleScreenActive(false),
+      m_titleScreenTransitioning(false),
       m_lastTextBlipMs(-1000)
 {
     buildUi();
@@ -393,12 +660,12 @@ GameWindow::GameWindow(QWidget *parent)
 
     loadAudioManifest();
     loadStoryContent();
-    m_narrativeEngine->start();
+    showTitleScreen();
 }
 
 void GameWindow::setSpeaker(const QString &speaker)
 {
-    m_dialoguePanel->setSpeaker(speaker);
+    m_dialoguePanel->setSpeaker(displaySpeakerName(speaker));
 }
 
 void GameWindow::clearSpeaker()
@@ -429,10 +696,16 @@ void GameWindow::setBackgroundStyle(BackgroundStyle style)
     const QPixmap pixmap = resolveBackgroundPixmap(style);
     if (pixmap.isNull()) {
         m_backgroundWidget->clearBackgroundPixmap();
+        if (m_shaderWidget) {
+            m_shaderWidget->setSourcePixmap(QPixmap());
+        }
         return;
     }
 
     m_backgroundWidget->setBackgroundPixmap(pixmap);
+    if (m_shaderWidget) {
+        m_shaderWidget->setSourcePixmap(pixmap);
+    }
 }
 
 void GameWindow::setInteractionItems(const InteractionItems &items)
@@ -447,10 +720,11 @@ void GameWindow::setInteractionMode(InteractionMode mode)
 
 void GameWindow::showNarrationMode(const QString &text, bool showContinue)
 {
+    hideFloatingChoiceLayer();
     clearCenterText();
     setDialogueVisible(true);
     clearSpeaker();
-    updateDialoguePanelBounds(false);
+    updateDialoguePanelBounds(false, 0);
     setPagedText(text, showContinue);
     setInteractionMode(InteractionMode::None);
     setInteractionItems({});
@@ -459,10 +733,11 @@ void GameWindow::showNarrationMode(const QString &text, bool showContinue)
 
 void GameWindow::showDialogueMode(const QString &speaker, const QString &text, bool showContinue)
 {
+    hideFloatingChoiceLayer();
     clearCenterText();
     setDialogueVisible(true);
     setSpeaker(speaker);
-    updateDialoguePanelBounds(false);
+    updateDialoguePanelBounds(false, 0);
     setPagedText(text, showContinue);
     setInteractionMode(InteractionMode::None);
     setInteractionItems({});
@@ -471,6 +746,7 @@ void GameWindow::showDialogueMode(const QString &speaker, const QString &text, b
 
 void GameWindow::showPerformanceMode(const QString &text)
 {
+    hideFloatingChoiceLayer();
     if (isMessageNotificationScene(m_activeSceneId)) {
         showMessageNotificationMode(text);
         return;
@@ -479,7 +755,7 @@ void GameWindow::showPerformanceMode(const QString &text)
     resetMessageNotificationOverlay();
     setDialogueVisible(false);
     clearPagedText();
-    updateDialoguePanelBounds(false);
+    updateDialoguePanelBounds(false, 0);
     setInteractionMode(InteractionMode::None);
     setInteractionItems({});
     m_dialoguePanel->setInteractionVisible(false);
@@ -497,20 +773,20 @@ void GameWindow::showPerformanceMode(const QString &text)
         m_centerTextFrameMode = true;
         m_currentTextFrameIndex = 0;
         if (shouldTypewriteCenterText(m_activeSceneId)) {
-            startCenterTextTypewriter(m_textFrames.first(), 58);
+            startCenterTextTypewriter(displayCenterText(m_textFrames.first()), 58);
         } else {
             stopCenterTextTypewriter();
-            setCenterText(m_textFrames.first());
+            setCenterText(displayCenterText(m_textFrames.first()));
         }
     } else if (shouldTypewriteCenterText(m_activeSceneId)) {
         m_centerTextFrameMode = false;
         m_currentTextFrameIndex = -1;
-        startCenterTextTypewriter(text, 58);
+        startCenterTextTypewriter(displayCenterText(text), 58);
     } else {
         m_centerTextFrameMode = false;
         m_currentTextFrameIndex = -1;
         stopCenterTextTypewriter();
-        setCenterText(text);
+        setCenterText(displayCenterText(text));
     }
 }
 
@@ -520,15 +796,17 @@ void GameWindow::showInteractionMode(const QString &speaker,
                                      const InteractionItems &items,
                                      bool showContinue)
 {
+    const bool useFloatingChoiceLayer = shouldUseFloatingChoiceLayer(mode, items);
+    hideFloatingChoiceLayer();
     clearCenterText();
     setDialogueVisible(true);
     clearPagedText();
-    updateDialoguePanelBounds(!items.isEmpty());
 
-    if (speaker.trimmed().isEmpty()) {
+    const QString displaySpeaker = displaySpeakerName(speaker);
+    if (displaySpeaker.trimmed().isEmpty()) {
         clearSpeaker();
     } else {
-        setSpeaker(speaker);
+        setSpeaker(displaySpeaker);
     }
 
     const QStringList customFrames = buildCustomTextFrames(text);
@@ -539,6 +817,8 @@ void GameWindow::showInteractionMode(const QString &speaker,
         setText(m_textFrames.first());
         setInteractionMode(mode);
         setInteractionItems(items);
+        updateDialoguePanelBounds(useFloatingChoiceLayer ? false : !items.isEmpty(),
+                                  m_dialoguePanel->visibleInteractionCount());
         m_dialoguePanel->setInteractionVisible(false);
         setContinueVisible(true);
         return;
@@ -547,6 +827,15 @@ void GameWindow::showInteractionMode(const QString &speaker,
     setText(text);
     setInteractionMode(mode);
     setInteractionItems(items);
+    updateDialoguePanelBounds(useFloatingChoiceLayer ? false : !items.isEmpty(),
+                              m_dialoguePanel->visibleInteractionCount());
+    if (useFloatingChoiceLayer) {
+        m_dialoguePanel->setInteractionVisible(false);
+        showFloatingChoiceLayer(items);
+        setContinueVisible(false);
+        return;
+    }
+
     m_dialoguePanel->setInteractionVisible(!items.isEmpty());
     setContinueVisible(showContinue);
 
@@ -557,6 +846,14 @@ void GameWindow::showInteractionMode(const QString &speaker,
 
 void GameWindow::keyPressEvent(QKeyEvent *event)
 {
+    if (m_titleScreenActive && !m_titleScreenTransitioning) {
+        if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+            startGameFromTitle();
+            event->accept();
+            return;
+        }
+    }
+
     if ((event->key() == Qt::Key_Return
          || event->key() == Qt::Key_Enter
          || event->key() == Qt::Key_Space)
@@ -575,11 +872,6 @@ void GameWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
-    if (event->key() == Qt::Key_F9) {
-        openAudioTestDialog();
-        event->accept();
-        return;
-    }
 
     if ((event->key() == Qt::Key_Return
          || event->key() == Qt::Key_Enter
@@ -601,8 +893,12 @@ void GameWindow::resizeEvent(QResizeEvent *event)
         m_shaderWidget->setGeometry(m_backgroundWidget->rect());
     }
 
+    updateDreamFadeGeometry();
     updateMessageNotificationGeometry();
-    updateDialoguePanelBounds(m_dialoguePanel && m_dialoguePanel->hasVisibleInteractions());
+    updateTitleScreenGeometry();
+    updateDialoguePanelBounds(m_dialoguePanel && m_dialoguePanel->hasVisibleInteractions(),
+                              m_dialoguePanel ? m_dialoguePanel->visibleInteractionCount() : 0);
+    updateFloatingChoiceLayerGeometry();
     refreshPagedText();
     if (m_characterPortraitLabel) {
         const QPixmap portrait = m_characterPortraitLabel->pixmap();
@@ -637,8 +933,14 @@ void GameWindow::advanceNarrative()
             if (m_activeSceneId == QStringLiteral("scene8_enter_prompt")) {
                 m_scene8EnterPromptExpanded = true;
             }
-            m_dialoguePanel->setInteractionVisible(true);
-            m_dialoguePanel->focusFirstInteraction();
+            if (shouldUseFloatingChoiceLayer(m_lastNarrativeViewState->interactionMode,
+                                             m_lastNarrativeViewState->interactionItems)) {
+                m_dialoguePanel->setInteractionVisible(false);
+                showFloatingChoiceLayer(m_lastNarrativeViewState->interactionItems);
+            } else {
+                m_dialoguePanel->setInteractionVisible(true);
+                m_dialoguePanel->focusFirstInteraction();
+            }
             setContinueVisible(false);
         }
         return;
@@ -684,7 +986,12 @@ void GameWindow::advanceCenterTextTypewriter()
 
 void GameWindow::handleInteractionTriggered(const QString &id)
 {
-    if (!m_dialoguePanel->hasVisibleInteractions()) {
+    const bool hasVisibleBottomInteractions = m_dialoguePanel && m_dialoguePanel->hasVisibleInteractions();
+    const bool hasVisibleFloatingChoices = m_floatingChoiceLayer
+        && m_floatingChoiceLayer->isVisible()
+        && m_floatingChoiceLayer->visibleChoiceCount() > 0;
+
+    if (!hasVisibleBottomInteractions && !hasVisibleFloatingChoices) {
         return;
     }
 
@@ -728,10 +1035,14 @@ void GameWindow::applyNarrativeState()
     syncAmbientAudio(state);
     syncBgmAudio(state, sceneChanged);
     playConfiguredSceneEntrySounds(state, sceneChanged);
-    setHeaderText(state.header);
+    setHeaderText(displayHeaderText(state.header));
+    if (!isDreamSceneId(state.sceneId)) {
+        clearDreamShaderOverlay();
+    }
     setBackgroundStyle(state.backgroundStyle);
     setShaderEffect(state.shaderEffect);
-    updateCharacterPortrait(state);
+    applyDreamShaderBinding(state);
+    applyDreamPresentation(state, sceneChanged);
 
     if (state.displayMode == NarrativeDisplayMode::Interaction && !state.interactionItems.isEmpty()) {
         showInteractionMode(state.showSpeaker ? state.speaker : QString(),
@@ -742,6 +1053,7 @@ void GameWindow::applyNarrativeState()
         if (state.autoAdvance) {
             scheduleAutoAdvance(state);
         }
+        updateCharacterPortrait(state);
         return;
     }
 
@@ -756,6 +1068,7 @@ void GameWindow::applyNarrativeState()
     if (state.autoAdvance) {
         scheduleAutoAdvance(state);
     }
+    updateCharacterPortrait(state);
 }
 
 void GameWindow::openAudioTestDialog()
@@ -815,12 +1128,8 @@ void GameWindow::buildUi()
 {
     resize(1280, 720);
     setMinimumSize(960, 600);
-    setWindowTitle(QString::fromUtf8(u8"第一天 - 最小数据驱动原型"));
-
-    auto *audioTestAction = new QAction(QString::fromUtf8(u8"音频测试"), this);
-    audioTestAction->setShortcut(QKeySequence(Qt::Key_F9));
-    connect(audioTestAction, &QAction::triggered, this, &GameWindow::openAudioTestDialog);
-    menuBar()->addAction(audioTestAction);
+    setWindowTitle(QString::fromUtf8(u8"第一天"));
+    menuBar()->hide();
 
     m_backgroundWidget = new BackgroundWidget(this);
     setCentralWidget(m_backgroundWidget);
@@ -842,9 +1151,36 @@ void GameWindow::buildUi()
         "    font-weight: 600;"
         "}"
     );
+    m_headerLabel->setStyleSheet(
+        "QLabel {"
+        "    color: rgba(232, 240, 255, 176);"
+        "    background: transparent;"
+        "    border: none;"
+        "    padding: 2px 4px;"
+        "    font-size: 16px;"
+        "    letter-spacing: 0px;"
+        "    font-weight: 500;"
+        "}"
+    );
+    m_headerLabel->hide();
     layout->addWidget(m_headerLabel, 0, Qt::AlignLeft | Qt::AlignTop);
 
     layout->addStretch();
+
+    m_dreamFadeOverlay = new QWidget(m_backgroundWidget);
+    m_dreamFadeOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_dreamFadeOverlay->setStyleSheet(QStringLiteral("background: rgb(0, 0, 0);"));
+    m_dreamFadeOverlay->hide();
+    m_dreamFadeEffect = new QGraphicsOpacityEffect(m_dreamFadeOverlay);
+    m_dreamFadeEffect->setOpacity(0.0);
+    m_dreamFadeOverlay->setGraphicsEffect(m_dreamFadeEffect);
+    m_dreamFadeAnimation = new QPropertyAnimation(m_dreamFadeEffect, "opacity", m_dreamFadeOverlay);
+    connect(m_dreamFadeAnimation, &QPropertyAnimation::finished, this, [this]() {
+        if (m_dreamFadeEffect && m_dreamFadeEffect->opacity() <= 0.01 && m_dreamFadeOverlay) {
+            m_dreamFadeOverlay->hide();
+        }
+    });
+    updateDreamFadeGeometry();
 
     m_centerTextLabel = new QLabel(m_backgroundWidget);
     m_centerTextLabel->setObjectName("centerTextLabel");
@@ -861,6 +1197,7 @@ void GameWindow::buildUi()
         "    background: transparent;"
         "}"
     );
+    updateCenterTextAppearance();
     m_centerTextLabel->hide();
     layout->addWidget(m_centerTextLabel, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
@@ -873,8 +1210,13 @@ void GameWindow::buildUi()
     m_characterPortraitLabel->hide();
 
     m_dialoguePanel = new DialoguePanel(m_backgroundWidget);
-    updateDialoguePanelBounds(false);
+    updateDialoguePanelBounds(false, 0);
     m_dialoguePanel->show();
+    m_dialoguePanel->hide();
+
+    m_floatingChoiceLayer = new FloatingChoiceLayer(m_backgroundWidget);
+    m_floatingChoiceLayer->setGeometry(m_backgroundWidget->rect());
+    m_floatingChoiceLayer->hide();
 
     m_messageNotificationOverlay = new QWidget(m_backgroundWidget);
     m_messageNotificationOverlay->setAttribute(Qt::WA_TransparentForMouseEvents, false);
@@ -897,7 +1239,7 @@ void GameWindow::buildUi()
     m_messageNotificationMessagesWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     cardLayout->addWidget(m_messageNotificationMessagesWidget, 0, Qt::AlignLeft);
 
-    m_messageNotificationContinueButton = new QPushButton(QString::fromUtf8(u8"继续"), m_messageNotificationCard);
+    m_messageNotificationContinueButton = new QPushButton(QString::fromUtf8(u8"缁х画"), m_messageNotificationCard);
     m_messageNotificationContinueButton->setCursor(Qt::PointingHandCursor);
     m_messageNotificationContinueButton->setStyleSheet(
         "QPushButton {"
@@ -926,16 +1268,24 @@ void GameWindow::buildUi()
     m_shaderWidget->setGeometry(m_backgroundWidget->rect());
     m_shaderWidget->hide();
     m_shaderWidget->raise();
+    connect(m_shaderWidget, &ShaderToyWidget::shaderCompileFailed, this, [this](const QString &) {
+        clearDreamShaderOverlay();
+    });
 
+    m_dreamFadeOverlay->raise();
     m_headerLabel->raise();
     m_centerTextLabel->raise();
     m_dialoguePanel->raise();
+    m_floatingChoiceLayer->raise();
     m_messageNotificationOverlay->raise();
+    buildTitleScreen();
 
     connect(m_dialoguePanel, &DialoguePanel::continueRequested, this, &GameWindow::advanceNarrative);
     connect(m_dialoguePanel, &DialoguePanel::continueButtonClicked, this, &GameWindow::handleContinueButtonClicked);
     connect(m_dialoguePanel, &DialoguePanel::interactionTriggered, this, &GameWindow::handleInteractionTriggered);
     connect(m_dialoguePanel, &DialoguePanel::interactionButtonClicked, this, &GameWindow::handleInteractionButtonClicked);
+    connect(m_floatingChoiceLayer, &FloatingChoiceLayer::choiceTriggered, this, &GameWindow::handleInteractionTriggered);
+    connect(m_floatingChoiceLayer, &FloatingChoiceLayer::choiceButtonClicked, this, &GameWindow::handleInteractionButtonClicked);
 }
 
 void GameWindow::loadAudioManifest()
@@ -988,6 +1338,181 @@ void GameWindow::loadStoryContent()
     m_narrativeEngine->loadScenes(createSampleStory(), sampleStoryStartSceneId());
 }
 
+void GameWindow::buildTitleScreen()
+{
+    if (!m_backgroundWidget || m_titleScreenOverlay) {
+        return;
+    }
+
+    m_titleCoverPixmap = resolveTitleCoverPixmap();
+
+    m_titleScreenOverlay = new QWidget(m_backgroundWidget);
+    m_titleScreenOverlay->setObjectName(QStringLiteral("titleScreenOverlay"));
+    m_titleScreenOverlay->setStyleSheet(QStringLiteral(
+        "QWidget#titleScreenOverlay {"
+        "    background: transparent;"
+        "}"));
+
+    m_titleBackgroundLabel = new QLabel(m_titleScreenOverlay);
+    m_titleBackgroundLabel->setAlignment(Qt::AlignCenter);
+    m_titleBackgroundLabel->setStyleSheet(QStringLiteral("background: transparent;"));
+
+    m_titleStartButton = new QPushButton(QString(), m_titleScreenOverlay);
+    m_titleStartButton->setObjectName(QStringLiteral("titleStartButton"));
+    m_titleStartButton->setCursor(Qt::PointingHandCursor);
+    m_titleStartButton->setFocusPolicy(Qt::StrongFocus);
+    m_titleStartButton->setFlat(true);
+    m_titleStartButton->setToolTip(QString::fromUtf8(u8"开始游戏"));
+    m_titleStartButton->setStyleSheet(QStringLiteral(
+        "QPushButton#titleStartButton {"
+        "    color: transparent;"
+        "    background: rgba(255, 255, 255, 0);"
+        "    border: 1px solid rgba(243, 234, 220, 0);"
+        "    border-radius: 16px;"
+        "    padding: 0px;"
+        "}"
+        "QPushButton#titleStartButton:hover {"
+        "    background: rgba(248, 240, 226, 26);"
+        "    border: 1px solid rgba(244, 236, 222, 92);"
+        "}"
+        "QPushButton#titleStartButton:pressed {"
+        "    background: rgba(236, 226, 211, 42);"
+        "    border: 1px solid rgba(244, 236, 222, 118);"
+        "}"
+        "QPushButton#titleStartButton:focus {"
+        "    border: 1px solid rgba(244, 236, 222, 82);"
+        "}"));
+    connect(m_titleStartButton, &QPushButton::clicked, this, &GameWindow::startGameFromTitle);
+
+    m_titleScreenEffect = new QGraphicsOpacityEffect(m_titleScreenOverlay);
+    m_titleScreenEffect->setOpacity(1.0);
+    m_titleScreenOverlay->setGraphicsEffect(m_titleScreenEffect);
+
+    m_titleScreenFadeAnimation = new QPropertyAnimation(m_titleScreenEffect, "opacity", m_titleScreenOverlay);
+    m_titleScreenFadeAnimation->setDuration(420);
+    m_titleScreenFadeAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+    connect(m_titleScreenFadeAnimation, &QPropertyAnimation::finished, this, &GameWindow::finishTitleScreenTransition);
+
+    updateTitleScreenGeometry();
+    m_titleScreenOverlay->hide();
+}
+
+void GameWindow::showTitleScreen()
+{
+    if (!m_titleScreenOverlay) {
+        return;
+    }
+
+    m_titleScreenActive = true;
+    m_titleScreenTransitioning = false;
+    m_activeSceneId.clear();
+    clearCenterText();
+    clearSpeaker();
+    clearPagedText();
+    setContinueVisible(false);
+    m_dialoguePanel->hide();
+    m_headerLabel->hide();
+    m_characterPortraitLabel->hide();
+    resetMessageNotificationOverlay();
+    m_autoAdvanceTimer->stop();
+    m_bgmStartDelayTimer->stop();
+    m_ambStopAfterBgmTimer->stop();
+    if (m_audioManager) {
+        m_audioManager->stopBgm(300);
+        m_audioManager->stopAmb(300);
+    }
+
+    if (m_titleScreenFadeAnimation) {
+        m_titleScreenFadeAnimation->stop();
+    }
+    if (m_titleScreenEffect) {
+        m_titleScreenEffect->setOpacity(1.0);
+    }
+
+    updateTitleScreenGeometry();
+    m_titleScreenOverlay->show();
+    m_titleScreenOverlay->raise();
+    if (m_titleStartButton) {
+        m_titleStartButton->setEnabled(true);
+        m_titleStartButton->setFocus();
+    }
+}
+
+void GameWindow::updateTitleScreenGeometry()
+{
+    if (!m_backgroundWidget || !m_titleScreenOverlay) {
+        return;
+    }
+
+    const QRect rect = m_backgroundWidget->rect();
+    m_titleScreenOverlay->setGeometry(rect);
+
+    if (m_titleBackgroundLabel) {
+        m_titleBackgroundLabel->setGeometry(rect);
+
+        if (!m_titleCoverPixmap.isNull()) {
+            const QPixmap scaled = m_titleCoverPixmap.scaled(rect.size(),
+                                                             Qt::KeepAspectRatioByExpanding,
+                                                             Qt::SmoothTransformation);
+            m_titleBackgroundLabel->setPixmap(scaled);
+        } else {
+            m_titleBackgroundLabel->clear();
+        }
+    }
+
+    if (m_titleStartButton) {
+        const int buttonWidth = qMax(228, qRound(rect.width() * 0.18));
+        const int buttonHeight = qMax(56, qRound(rect.height() * 0.074));
+        const int x = (rect.width() - buttonWidth) / 2;
+        const int y = qRound(rect.height() * 0.755);
+        m_titleStartButton->setGeometry(x, y, buttonWidth, buttonHeight);
+        m_titleStartButton->raise();
+    }
+}
+
+void GameWindow::startGameFromTitle()
+{
+    if (!m_titleScreenActive || m_titleScreenTransitioning || !m_titleScreenOverlay) {
+        return;
+    }
+
+    m_titleScreenTransitioning = true;
+    playUiClickSound();
+    if (m_titleStartButton) {
+        m_titleStartButton->setEnabled(false);
+    }
+
+    if (m_titleScreenFadeAnimation && m_titleScreenEffect) {
+        m_titleScreenFadeAnimation->stop();
+        m_titleScreenFadeAnimation->setStartValue(m_titleScreenEffect->opacity());
+        m_titleScreenFadeAnimation->setEndValue(0.0);
+        m_titleScreenFadeAnimation->start();
+        return;
+    }
+
+    finishTitleScreenTransition();
+}
+
+void GameWindow::finishTitleScreenTransition()
+{
+    if (!m_titleScreenActive) {
+        return;
+    }
+
+    m_titleScreenTransitioning = false;
+    m_titleScreenActive = false;
+    if (m_titleScreenOverlay) {
+        m_titleScreenOverlay->hide();
+    }
+    if (m_titleScreenEffect) {
+        m_titleScreenEffect->setOpacity(1.0);
+    }
+    if (m_dialoguePanel) {
+        m_dialoguePanel->show();
+    }
+    m_narrativeEngine->start();
+}
+
 void GameWindow::syncAmbientAudio(const NarrativeViewState &state)
 {
     if (!m_audioManager) {
@@ -997,7 +1522,7 @@ void GameWindow::syncAmbientAudio(const NarrativeViewState &state)
     QString audioId = ambientAudioIdForScene(state.sceneId);
     if ((state.sceneId.startsWith(QStringLiteral("scene1_"))
          || state.sceneId.startsWith(QStringLiteral("scene2_")))
-        && state.speaker == QString::fromUtf8(u8"川哥")
+        && state.speaker == QString::fromUtf8(u8"宸濆摜")
         && state.sceneId != QStringLiteral("scene2_report_stuck")) {
         audioId.clear();
     }
@@ -1012,11 +1537,43 @@ void GameWindow::syncAmbientAudio(const NarrativeViewState &state)
 
     if (audioId.isEmpty()) {
         m_ambStopAfterBgmTimer->stop();
-        m_audioManager->stopAmb(800);
+        const int fadeOutMs = (state.sceneId == QStringLiteral("scene7b_dream_fall")
+            || state.sceneId == QStringLiteral("dream_1_fall")) ? 1800 : 800;
+        m_audioManager->stopAmb(fadeOutMs);
         return;
     }
 
-    m_audioManager->playAmb(audioId, 800, 800);
+    const bool enteringHiddenPlace = state.sceneId == QStringLiteral("scene7a_topics")
+        && audioId == QStringLiteral("amb_hidden_place_night_loop");
+    const bool enteringDreamAir = state.sceneId == QStringLiteral("dream_2_suspend")
+        && audioId == QStringLiteral("amb_dream_air");
+    m_audioManager->playAmb(audioId,
+                            enteringHiddenPlace ? 120 : 800,
+                            enteringHiddenPlace ? 220 : (enteringDreamAir ? 1500 : 800));
+    if (state.sceneId == QStringLiteral("scene7b_dream_sleep")) {
+        m_audioManager->setAmbVolumeScale(0.25, 2200);
+    } else if (state.sceneId == QStringLiteral("dream_0_sleep")) {
+        m_audioManager->setAmbVolumeScale(0.20, 2000);
+    } else if (state.sceneId == QStringLiteral("dream_2_suspend")) {
+        m_audioManager->setAmbVolumeScale(1.0, 1500);
+    } else if (state.sceneId.startsWith(QStringLiteral("dream_3_future_"))) {
+        m_audioManager->restoreAmb(700);
+    } else if (state.sceneId == QStringLiteral("dream_4_end")) {
+        m_audioManager->setAmbVolumeScale(0.72, 900);
+    } else if (state.sceneId == QStringLiteral("dream_5_wake")) {
+        m_audioManager->restoreAmb(1400);
+    } else if (state.sceneId.startsWith(QStringLiteral("cold_open_0_"))) {
+        m_audioManager->setAmbVolumeScale(0.22, 1200);
+    } else if (isColdOpenMuffledSceneId(state.sceneId)
+               || state.sceneId == QStringLiteral("cold_open_3_lingling")) {
+        m_audioManager->setAmbVolumeScale(0.32, 1000);
+    } else if (state.sceneId.startsWith(QStringLiteral("cold_open_"))) {
+        m_audioManager->restoreAmb(700);
+    } else if (state.sceneId == QStringLiteral("scene7b_dream_wake")) {
+        m_audioManager->restoreAmb(1800);
+    } else {
+        m_audioManager->restoreAmb(700);
+    }
 }
 
 void GameWindow::syncBgmAudio(const NarrativeViewState &state, bool sceneChanged)
@@ -1033,7 +1590,10 @@ void GameWindow::syncBgmAudio(const NarrativeViewState &state, bool sceneChanged
         m_pendingBgmAudioId.clear();
         m_bgmStartDelayTimer->stop();
         m_ambStopAfterBgmTimer->stop();
-        m_audioManager->stopBgm(sceneChanged ? 0 : 800);
+        const int fadeOutMs = state.sceneId == QStringLiteral("dream_5_wake")
+            ? 3000
+            : (sceneChanged ? 0 : 800);
+        m_audioManager->stopBgm(fadeOutMs);
         return;
     }
 
@@ -1044,8 +1604,10 @@ void GameWindow::syncBgmAudio(const NarrativeViewState &state, bool sceneChanged
         }
         if (state.sceneId.startsWith(QStringLiteral("scene4_"))) {
             m_audioManager->duckBgm(0.18, 500);
+        } else if (state.sceneId == QStringLiteral("dream_4_end")) {
+            m_audioManager->duckBgm(0.70, 900);
         } else {
-            m_audioManager->restoreBgm(500);
+            m_audioManager->restoreBgm(state.sceneId == QStringLiteral("dream_2_suspend") ? 2500 : 500);
         }
         return;
     }
@@ -1057,15 +1619,18 @@ void GameWindow::syncBgmAudio(const NarrativeViewState &state, bool sceneChanged
     if (!shouldDelayBgmStart(state.sceneId)) {
         m_pendingBgmAudioId.clear();
         m_bgmStartDelayTimer->stop();
-        m_audioManager->playBgm(audioId, sceneChangeFadeOutMs, 800);
+        const int fadeInMs = state.sceneId == QStringLiteral("dream_2_suspend") ? 2500 : 800;
+        m_audioManager->playBgm(audioId, sceneChangeFadeOutMs, fadeInMs);
         const int ambLeadOutDelayMs = ambientLeadOutDelayMsForScene(state.sceneId);
         if (ambLeadOutDelayMs > 0 && !m_audioManager->currentAmbId().isEmpty()) {
             m_ambStopAfterBgmTimer->start(ambLeadOutDelayMs);
         }
         if (state.sceneId.startsWith(QStringLiteral("scene4_"))) {
             m_audioManager->duckBgm(0.18, 500);
+        } else if (state.sceneId == QStringLiteral("dream_4_end")) {
+            m_audioManager->duckBgm(0.70, 900);
         } else {
-            m_audioManager->restoreBgm(500);
+            m_audioManager->restoreBgm(state.sceneId == QStringLiteral("dream_2_suspend") ? 2500 : 500);
         }
         return;
     }
@@ -1117,6 +1682,10 @@ void GameWindow::playConfiguredSceneEntrySounds(const NarrativeViewState &state,
         return;
     }
 
+    if (state.sceneId == QStringLiteral("scene1_intro")) {
+        m_audioManager->stopEmo(QStringLiteral("emo_dream_fall_low"));
+    }
+
     if (state.sceneId == QStringLiteral("scene8_score_question")) {
         m_audioManager->stopSfx(QStringLiteral("sfx_sink_water"));
     }
@@ -1135,6 +1704,7 @@ void GameWindow::playConfiguredSceneEntrySounds(const NarrativeViewState &state,
     if (!sfxAudioId.isEmpty()) {
         m_audioManager->playSfx(sfxAudioId);
     }
+
 }
 
 void GameWindow::playTextBlipIfNeeded(const QString &text)
@@ -1171,7 +1741,7 @@ void GameWindow::showMessageNotificationMode(const QString &text)
 {
     setDialogueVisible(false);
     clearPagedText();
-    updateDialoguePanelBounds(false);
+    updateDialoguePanelBounds(false, 0);
     setInteractionMode(InteractionMode::None);
     setInteractionItems({});
     m_dialoguePanel->setInteractionVisible(false);
@@ -1374,6 +1944,201 @@ void GameWindow::completeMessageNotificationSequence()
     m_messageNotificationOverlay->raise();
 }
 
+void GameWindow::updateDreamFadeGeometry()
+{
+    if (!m_backgroundWidget || !m_dreamFadeOverlay) {
+        return;
+    }
+
+    m_dreamFadeOverlay->setGeometry(m_backgroundWidget->rect());
+}
+
+void GameWindow::clearDreamFade()
+{
+    if (!m_dreamFadeAnimation || !m_dreamFadeEffect || !m_dreamFadeOverlay) {
+        return;
+    }
+
+    m_dreamFadeAnimation->stop();
+    m_dreamFadeEffect->setOpacity(0.0);
+    m_dreamFadeOverlay->hide();
+}
+
+void GameWindow::startDreamFade(qreal startOpacity, qreal endOpacity, int durationMs)
+{
+    if (!m_dreamFadeAnimation || !m_dreamFadeEffect || !m_dreamFadeOverlay) {
+        return;
+    }
+
+    updateDreamFadeGeometry();
+    m_dreamFadeAnimation->stop();
+    m_dreamFadeOverlay->show();
+    m_dreamFadeOverlay->raise();
+    m_dreamFadeEffect->setOpacity(startOpacity);
+    m_dreamFadeAnimation->setDuration(qMax(1, durationMs));
+    m_dreamFadeAnimation->setStartValue(startOpacity);
+    m_dreamFadeAnimation->setEndValue(endOpacity);
+    m_dreamFadeAnimation->start();
+    if (m_headerLabel) {
+        m_headerLabel->raise();
+    }
+    if (m_centerTextLabel) {
+        m_centerTextLabel->raise();
+    }
+    if (m_dialoguePanel) {
+        m_dialoguePanel->raise();
+    }
+    if (m_messageNotificationOverlay && m_messageNotificationOverlay->isVisible()) {
+        m_messageNotificationOverlay->raise();
+    }
+}
+
+void GameWindow::applyDreamPresentation(const NarrativeViewState &state, bool sceneChanged)
+{
+    if (!sceneChanged) {
+        return;
+    }
+
+    if (!isDreamSceneId(state.sceneId)) {
+        clearDreamFade();
+        return;
+    }
+
+    if (!isNewDreamSceneId(state.sceneId)) {
+        clearDreamFade();
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_0_sleep")) {
+        startDreamFade(0.0, 1.0, 3400);
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_1_fall")) {
+        clearDreamFade();
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_2_suspend")) {
+        startDreamFade(1.0, 0.0, 1800);
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_3_future_far")
+        || state.sceneId == QStringLiteral("dream_3_future_together")
+        || state.sceneId == QStringLiteral("dream_3_future_create")) {
+        startDreamFade(1.0, 0.0, 700);
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_4_end")) {
+        startDreamFade(0.0, 1.0, 3200);
+        return;
+    }
+
+    if (state.sceneId == QStringLiteral("dream_5_wake")) {
+        startDreamFade(1.0, 0.0, 1400);
+        return;
+    }
+
+    clearDreamFade();
+}
+
+void GameWindow::applyDreamShaderBinding(const NarrativeViewState &state)
+{
+    if (!m_shaderWidget) {
+        return;
+    }
+
+    QString shaderFileName;
+    bool useNoiseTexture = false;
+    if (state.sceneId == QStringLiteral("dream_1_fall")) {
+        shaderFileName = QStringLiteral("dream_fall_xskgrw.frag");
+    } else if (usesDreamFutureShader(state.sceneId)) {
+        shaderFileName = QStringLiteral("dream_future_mtcgdf.frag");
+        useNoiseTexture = true;
+    } else {
+        clearDreamShaderOverlay();
+        return;
+    }
+
+    const QString shaderFilePath = resolveDreamShaderFilePath(shaderFileName);
+    if (shaderFilePath.isEmpty()) {
+        qWarning() << "Dream shader file not found:" << shaderFileName;
+        clearDreamShaderOverlay();
+        return;
+    }
+
+    setDreamShaderOverlayFile(shaderFilePath);
+    setDreamShaderOverlayUseNoiseTexture(useNoiseTexture);
+    setDreamShaderOverlayEnabled(true);
+}
+
+void GameWindow::setDreamShaderOverlayEnabled(bool enabled)
+{
+    if (!m_shaderWidget) {
+        return;
+    }
+
+    m_shaderWidget->setDreamShaderEnabled(enabled);
+    if (!enabled) {
+        if (m_shaderWidget->shaderEffect() == ShaderEffect::None) {
+            m_shaderWidget->hide();
+        }
+        return;
+    }
+
+    if (!m_shaderWidget->externalFragmentShaderFile().isEmpty()) {
+        m_shaderWidget->restartAnimation();
+        m_shaderWidget->show();
+        m_shaderWidget->raise();
+        if (m_characterPortraitLabel && m_characterPortraitLabel->isVisible()) {
+            m_characterPortraitLabel->raise();
+        }
+        if (m_headerLabel) {
+            m_headerLabel->raise();
+        }
+        if (m_centerTextLabel) {
+            m_centerTextLabel->raise();
+        }
+        if (m_dialoguePanel) {
+            m_dialoguePanel->raise();
+        }
+    }
+}
+
+void GameWindow::setDreamShaderOverlayFile(const QString &shaderFilePath)
+{
+    if (!m_shaderWidget) {
+        return;
+    }
+
+    m_shaderWidget->setExternalFragmentShaderFile(shaderFilePath);
+}
+
+void GameWindow::setDreamShaderOverlayUseNoiseTexture(bool useNoiseTexture)
+{
+    if (!m_shaderWidget) {
+        return;
+    }
+
+    m_shaderWidget->setExternalChannel0UsesNoiseTexture(useNoiseTexture);
+}
+
+void GameWindow::clearDreamShaderOverlay()
+{
+    if (!m_shaderWidget) {
+        return;
+    }
+
+    m_shaderWidget->setDreamShaderEnabled(false);
+    m_shaderWidget->setExternalFragmentShaderFile(QString());
+    m_shaderWidget->setExternalChannel0UsesNoiseTexture(false);
+    if (m_shaderWidget->shaderEffect() == ShaderEffect::None) {
+        m_shaderWidget->hide();
+    }
+}
+
 void GameWindow::advanceMessageNotificationScene()
 {
     if (!m_messageNotificationAwaitingContinue || !m_narrativeEngine) {
@@ -1402,11 +2167,14 @@ void GameWindow::updateMessageNotificationGeometry()
 
 void GameWindow::setHeaderText(const QString &text)
 {
-    m_headerLabel->setText(text);
+    const QString cleaned = text.trimmed();
+    m_headerLabel->setText(cleaned);
+    m_headerLabel->setVisible(!cleaned.isEmpty());
 }
 
 void GameWindow::setCenterText(const QString &text)
 {
+    updateCenterTextAppearance();
     m_centerTextLabel->setText(text);
     m_centerTextLabel->setVisible(!text.trimmed().isEmpty());
 }
@@ -1438,6 +2206,26 @@ void GameWindow::stopCenterTextTypewriter()
     }
     m_centerTextTarget.clear();
     m_centerTextVisibleCharacters = 0;
+}
+
+void GameWindow::updateCenterTextAppearance()
+{
+    if (!m_centerTextLabel) {
+        return;
+    }
+
+    const QString textColor = isColdOpenCenterTextScene(m_activeSceneId)
+        ? QStringLiteral("#FF8E8E")
+        : QStringLiteral("#EEF4FF");
+    m_centerTextLabel->setStyleSheet(
+        QStringLiteral(
+            "QLabel#centerTextLabel {"
+            "    color: %1;"
+            "    font-size: 24px;"
+            "    line-height: 155%;"
+            "    font-weight: 500;"
+            "    background: transparent;"
+            "}").arg(textColor));
 }
 
 void GameWindow::setPagedText(const QString &text, bool showContinue)
@@ -1481,14 +2269,17 @@ bool GameWindow::showNextTextFrame()
     const QString nextFrame = m_textFrames.at(m_currentTextFrameIndex);
     if (m_centerTextFrameMode) {
         if (shouldTypewriteCenterText(m_activeSceneId)) {
-            startCenterTextTypewriter(nextFrame, 58);
+            startCenterTextTypewriter(displayCenterText(nextFrame), 58);
         } else {
             stopCenterTextTypewriter();
-            setCenterText(nextFrame);
+            setCenterText(displayCenterText(nextFrame));
         }
     } else {
         setText(nextFrame);
         setContinueVisible(true);
+    }
+    if (m_lastNarrativeViewState && m_activeSceneId == QStringLiteral("scene7a_hug")) {
+        updateCharacterPortrait(*m_lastNarrativeViewState);
     }
     return true;
 }
@@ -1520,28 +2311,168 @@ void GameWindow::refreshPagedText()
 
     m_currentTextFrameIndex = qBound(0, oldFrameIndex, m_textFrames.size() - 1);
     if (m_centerTextFrameMode) {
-        setCenterText(m_textFrames.at(m_currentTextFrameIndex));
+        setCenterText(displayCenterText(m_textFrames.at(m_currentTextFrameIndex)));
     } else {
         setText(m_textFrames.at(m_currentTextFrameIndex));
     }
 }
 
-void GameWindow::updateDialoguePanelBounds(bool hasInteractions)
+void GameWindow::updateDialoguePanelBounds(bool hasInteractions, int interactionCount)
 {
     if (!m_dialoguePanel || !m_backgroundWidget) {
         return;
     }
 
     const QRect rect = m_backgroundWidget->rect();
+    const bool isDreamHoverChoice = isDreamHoverChoiceSceneId(m_activeSceneId) && hasInteractions;
+    if (isDreamHoverChoice) {
+        const int panelWidth = qMax(980, qRound(rect.width() * 0.58));
+        const int panelHeight = qMax(300, qRound(rect.height() * 0.28));
+        const int x = (rect.width() - panelWidth) / 2;
+        const int y = qRound(rect.height() * 0.60) - panelHeight / 2;
+        m_dialoguePanel->setGeometry(x, y, panelWidth, panelHeight);
+        m_dialoguePanel->raise();
+        return;
+    }
+
+    const bool isScene1Interaction = m_activeSceneId.startsWith(QStringLiteral("scene1_")) && hasInteractions;
+    if (isScene1Interaction) {
+        const int panelWidth = qMax(1140, qRound(rect.width() * 0.86));
+        const int panelHeight = qMax(196, qRound(rect.height() * 0.255));
+        const int x = (rect.width() - panelWidth) / 2;
+        const int y = rect.height() - panelHeight - 18;
+        m_dialoguePanel->setGeometry(x, y, panelWidth, panelHeight);
+        m_dialoguePanel->raise();
+        return;
+    }
+
     const int panelWidth = hasInteractions
-        ? qMax(1080, qRound(rect.width() * 0.82))
-        : qMax(980, qRound(rect.width() * 0.70));
-    const int panelHeight = hasInteractions ? 230 : 120;
+        ? qMax(980, qRound(rect.width() * 0.79))
+        : qMax(940, qRound(rect.width() * 0.75));
+    int panelHeight = qMax(168, qRound(rect.height() * 0.225));
+    if (hasInteractions) {
+        if (interactionCount <= 2) {
+            panelHeight = qMax(panelHeight, qRound(rect.height() * 0.265));
+        } else {
+            panelHeight = qMax(panelHeight, qRound(rect.height() * 0.285));
+        }
+    }
     const int x = (rect.width() - panelWidth) / 2;
-    const int y = rect.height() - panelHeight - 26;
+    const int y = rect.height() - panelHeight - 22;
 
     m_dialoguePanel->setGeometry(x, y, panelWidth, panelHeight);
     m_dialoguePanel->raise();
+}
+
+void GameWindow::updateFloatingChoiceLayerGeometry()
+{
+    if (!m_floatingChoiceLayer || !m_backgroundWidget) {
+        return;
+    }
+
+    m_floatingChoiceLayer->setGeometry(m_backgroundWidget->rect());
+
+    int leftAvoidance = qRound(m_backgroundWidget->width() * 0.18);
+    if (m_characterPortraitLabel && m_characterPortraitLabel->isVisible()) {
+        leftAvoidance = qMax(leftAvoidance, m_characterPortraitLabel->geometry().right() + 26);
+    }
+
+    m_floatingChoiceLayer->setLeftAvoidance(leftAvoidance);
+    m_floatingChoiceLayer->raise();
+}
+
+bool GameWindow::shouldUseFloatingChoiceLayer(InteractionMode mode, const InteractionItems &items) const
+{
+    if (mode == InteractionMode::Object || mode == InteractionMode::None) {
+        return false;
+    }
+
+    if (mode != InteractionMode::Choice
+        && mode != InteractionMode::Hotspot
+        && mode != InteractionMode::Topic
+        && mode != InteractionMode::Action) {
+        return false;
+    }
+
+    int visibleCount = 0;
+    for (const InteractionItem &item : items) {
+        if (!item.hidden) {
+            ++visibleCount;
+        }
+    }
+
+    if (visibleCount > 2) {
+        qWarning() << "Floating choice layer fallback to bottom layout for scene"
+                   << m_activeSceneId
+                   << "mode"
+                   << static_cast<int>(mode)
+                   << "visible interactions"
+                   << visibleCount;
+    }
+
+    return visibleCount == 1 || visibleCount == 2;
+}
+
+void GameWindow::showFloatingChoiceLayer(const InteractionItems &items)
+{
+    if (!m_floatingChoiceLayer) {
+        return;
+    }
+
+    m_floatingChoiceLayer->setChoices(items);
+    if (!m_floatingChoiceLayer->hasChoices()) {
+        m_floatingChoiceLayer->hide();
+        return;
+    }
+
+    updateFloatingChoiceLayerGeometry();
+    m_floatingChoiceLayer->show();
+    m_floatingChoiceLayer->raise();
+}
+
+void GameWindow::hideFloatingChoiceLayer()
+{
+    if (!m_floatingChoiceLayer) {
+        return;
+    }
+
+    m_floatingChoiceLayer->clearChoices();
+    m_floatingChoiceLayer->hide();
+}
+
+QString GameWindow::displayHeaderText(const QString &text) const
+{
+    const QString trimmed = text.trimmed();
+    if (trimmed.isEmpty() || looksLikeInternalHeaderId(trimmed)) {
+        return {};
+    }
+
+    return stripSceneNumberPrefix(trimmed);
+}
+
+QString GameWindow::displaySpeakerName(const QString &speaker) const
+{
+    const QString trimmed = speaker.trimmed();
+    if (trimmed.isEmpty() || trimmed == QString::fromUtf8(u8"鏃佺櫧")) {
+        return {};
+    }
+
+    return trimmed;
+}
+
+QString GameWindow::displayCenterText(const QString &text) const
+{
+    const QString trimmed = text.trimmed();
+    if (trimmed.isEmpty()) {
+        return {};
+    }
+
+    return trimmed + QString::fromUtf8(u8"\n▼");
+}
+
+bool GameWindow::isColdOpenCenterTextScene(const QString &sceneId) const
+{
+    return sceneId.startsWith(QStringLiteral("cold_open_"));
 }
 
 void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
@@ -1558,6 +2489,7 @@ void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
         || state.sceneId.startsWith(QStringLiteral("scene6_"));
     const bool inLinglingScene6 = state.sceneId == QStringLiteral("scene6_invitation")
         || state.sceneId == QStringLiteral("scene6_go_downstairs_hesitation");
+    const bool inColdOpenLingling = isColdOpenLinglingPortraitSceneId(state.sceneId);
     const bool inLinglingOpening = state.sceneId == QStringLiteral("scene7a_opening");
     const bool inLinglingTopics = state.sceneId == QStringLiteral("scene7a_topics");
     const bool inLinglingHug = state.sceneId == QStringLiteral("scene7a_hug");
@@ -1571,14 +2503,16 @@ void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
         || state.sceneId == QStringLiteral("scene8_breakdown_ellipsis");
     const bool shouldShowChuanGe = (inEarlyScenes
             && state.showSpeaker
-            && state.speaker == QString::fromUtf8(u8"川哥"))
+            && state.speaker == QString::fromUtf8(u8"宸濆摜"))
         || (inOfficeScene && !inOfficeDoorway && !inOfficeReturnMonologue && !inOfficeBlackout);
     const bool shouldShowLingling = inLinglingScene6
+        || inColdOpenLingling
         || inLinglingOpening
         || inLinglingTopics
         || inLinglingHug
         || inLinglingComfort;
-    const bool shouldShow = state.shaderEffect == ShaderEffect::None
+    const bool shouldShow = !state.sceneId.startsWith(QStringLiteral("scene7b_dream_"))
+        && state.shaderEffect == ShaderEffect::None
         && (shouldShowChuanGe || shouldShowLingling);
 
     if (!shouldShow) {
@@ -1588,35 +2522,39 @@ void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
 
     QString portraitId;
     if (shouldShowLingling) {
-        if (inLinglingScene6) {
-            portraitId = QString::fromUtf8(u8"灵灵/站.png");
+        if (inLinglingScene6 || inColdOpenLingling) {
+            portraitId = QString::fromUtf8(u8"鐏电伒/绔?png");
         } else if (inLinglingOpening) {
-            portraitId = QString::fromUtf8(u8"灵灵/站听.png");
+            portraitId = QString::fromUtf8(u8"鐏电伒/绔欏惉.png");
         } else if (inLinglingTopics) {
             const QString hidePlace = m_narrativeEngine->gameState().stringValue(QStringLiteral("hide_place"));
             portraitId = hidePlace == QStringLiteral("gym_back")
-                ? QString::fromUtf8(u8"灵灵/坐听.png")
-                : QString::fromUtf8(u8"灵灵/站听.png");
+                ? QString::fromUtf8(u8"鐏电伒/鍧愬惉.png")
+                : QString::fromUtf8(u8"鐏电伒/绔欏惉.png");
         } else if (inLinglingHug) {
-            if (state.text.contains(QString::fromUtf8(u8"灵灵伸手"))
-                || state.text.contains(QString::fromUtf8(u8"伸手"))) {
-                if (!m_linglingHugPortraitCompleted) {
-                    m_linglingHugPortraitTimer->start(1000);
-                    portraitId = QString::fromUtf8(u8"灵灵/张开双手.png");
-                } else {
-                    portraitId = QString::fromUtf8(u8"灵灵/拥抱.png");
-                }
-            } else if (state.text.contains(QString::fromUtf8(u8"抱住你"))) {
+            QString hugText = state.text;
+            if (m_activeSceneId == QStringLiteral("scene7a_hug") && m_centerTextFrameMode
+                && m_currentTextFrameIndex >= 0 && m_currentTextFrameIndex < m_textFrames.size()) {
+                hugText = m_textFrames.at(m_currentTextFrameIndex);
+            }
+            if (hugText.contains(QString::fromUtf8(u8"抱住你"))) {
                 m_linglingHugPortraitCompleted = true;
-                portraitId = QString::fromUtf8(u8"灵灵/拥抱.png");
-            } else if (state.text.contains(QString::fromUtf8(u8"你终于彻底哭出来了"))) {
+                m_linglingHugPortraitTimer->stop();
+                portraitId = QString::fromUtf8(u8"鐏电伒/鎷ユ姳.png");
+            } else if (hugText.contains(QString::fromUtf8(u8"鐏电伒浼告墜"))
+                       || hugText.contains(QString::fromUtf8(u8"浼告墜"))) {
+                m_linglingHugPortraitCompleted = false;
+                m_linglingHugPortraitTimer->stop();
+                portraitId = QString::fromUtf8(u8"鐏电伒/寮犲紑鍙屾墜.png");
+            } else if (hugText.contains(QString::fromUtf8(u8"你终于彻底哭出来了"))) {
                 m_linglingHugPortraitCompleted = true;
-                portraitId = QString::fromUtf8(u8"灵灵/拥抱.png");
+                m_linglingHugPortraitTimer->stop();
+                portraitId = QString::fromUtf8(u8"鐏电伒/鎷ユ姳.png");
             } else {
-                portraitId = QString::fromUtf8(u8"灵灵/站听.png");
+                portraitId = QString::fromUtf8(u8"鐏电伒/绔欏惉.png");
             }
         } else {
-            portraitId = QString::fromUtf8(u8"灵灵/拥抱.png");
+            portraitId = QString::fromUtf8(u8"鐏电伒/鎷ユ姳.png");
         }
     } else if (inOfficeScene) {
         const bool isConflictSection = state.sceneId.startsWith(QStringLiteral("scene8_teacher_first_sting"))
@@ -1624,10 +2562,10 @@ void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
             || state.sceneId.startsWith(QStringLiteral("scene8_explain_try"))
             || state.sceneId.startsWith(QStringLiteral("scene8_conflict_feedback_"));
         portraitId = isConflictSection
-            ? QString::fromUtf8(u8"川哥/坐_angry.png")
-            : QString::fromUtf8(u8"川哥/坐_peace.png");
+            ? QString::fromUtf8(u8"宸濆摜/鍧恄angry.png")
+            : QString::fromUtf8(u8"宸濆摜/鍧恄peace.png");
     } else {
-        portraitId = QString::fromUtf8(u8"川哥/站.png");
+        portraitId = QString::fromUtf8(u8"宸濆摜/绔?png");
     }
 
     m_characterPortraitCache.remove(portraitId);
@@ -1644,6 +2582,9 @@ void GameWindow::updateCharacterPortrait(const NarrativeViewState &state)
     m_headerLabel->raise();
     m_centerTextLabel->raise();
     m_dialoguePanel->raise();
+    if (m_floatingChoiceLayer && m_floatingChoiceLayer->isVisible()) {
+        updateFloatingChoiceLayerGeometry();
+    }
 }
 
 void GameWindow::updateCharacterPortraitGeometry(const QPixmap &portrait)
@@ -1672,6 +2613,10 @@ void GameWindow::updateCharacterPortraitGeometry(const QPixmap &portrait)
 void GameWindow::scheduleAutoAdvance(const NarrativeViewState &state)
 {
     int durationMs = state.autoAdvanceDurationMs;
+    const int dreamFrameDurationMs = dreamAutoFrameDurationMs(state.sceneId);
+    if (dreamFrameDurationMs > 0) {
+        durationMs = dreamFrameDurationMs;
+    }
     if (durationMs <= 0) {
         durationMs = 900 + state.text.trimmed().size() * 85;
         durationMs = qMax(1100, qMin(durationMs, 4200));
@@ -1680,8 +2625,11 @@ void GameWindow::scheduleAutoAdvance(const NarrativeViewState &state)
         && state.text.contains(QString::fromUtf8(u8"灵灵伸手抱住你"))) {
         durationMs = qMax(durationMs, 1800);
     }
+    if (state.sceneId == QStringLiteral("scene7a_hug")) {
+        durationMs = 2000;
+    }
     if (state.sceneId == QStringLiteral("scene10_song_performance")) {
-        if (state.text.contains(QString::fromUtf8(u8"然后你开始唱"))) {
+        if (state.text.contains(QString::fromUtf8(u8"鐒跺悗浣犲紑濮嬪敱"))) {
             durationMs = 9000;
         } else {
             durationMs = 2000;
@@ -1715,6 +2663,21 @@ void GameWindow::setShaderEffect(ShaderEffect effect)
     m_shaderWidget->restartAnimation();
     m_shaderWidget->show();
     m_shaderWidget->raise();
+    if (m_characterPortraitLabel && m_characterPortraitLabel->isVisible()) {
+        m_characterPortraitLabel->raise();
+    }
+    if (m_headerLabel) {
+        m_headerLabel->raise();
+    }
+    if (m_centerTextLabel) {
+        m_centerTextLabel->raise();
+    }
+    if (m_dialoguePanel) {
+        m_dialoguePanel->raise();
+    }
+    if (m_messageNotificationOverlay && m_messageNotificationOverlay->isVisible()) {
+        m_messageNotificationOverlay->raise();
+    }
 }
 
 QStringList GameWindow::buildCustomTextFrames(const QString &text) const
@@ -1797,4 +2760,14 @@ QPixmap GameWindow::resolveBackgroundPixmap(BackgroundStyle style)
 
     m_backgroundCache.insert(cacheKey, QPixmap());
     return {};
+}
+
+QPixmap GameWindow::resolveTitleCoverPixmap() const
+{
+    const QString imagePath = resolveTitleCoverFilePath();
+    if (imagePath.isEmpty()) {
+        return {};
+    }
+
+    return QPixmap(imagePath);
 }

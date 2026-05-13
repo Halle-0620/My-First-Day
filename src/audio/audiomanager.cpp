@@ -275,6 +275,22 @@ void AudioManager::playEmo(const QString &audioId)
     playOneShot(audioId, AudioCategory::Emo);
 }
 
+void AudioManager::stopEmo(const QString &audioId)
+{
+    for (int index = m_oneShotChannels.size() - 1; index >= 0; --index) {
+        const OneShotChannel &channel = m_oneShotChannels.at(index);
+        if (channel.category != AudioCategory::Emo) {
+            continue;
+        }
+        if (!audioId.isEmpty() && channel.audioId != audioId) {
+            continue;
+        }
+        if (channel.player) {
+            channel.player->stop();
+        }
+    }
+}
+
 void AudioManager::stopAll(int fadeOutMs)
 {
     stopBgm(fadeOutMs);

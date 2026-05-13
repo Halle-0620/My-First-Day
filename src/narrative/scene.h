@@ -57,6 +57,7 @@ struct NarrativeInteraction
     QString id;
     QString text;
     InteractionItemType type = InteractionItemType::Choice;
+    bool enabled = true;
     QString nextSceneId;
     QString feedbackText;
     QList<QString> feedbackTextsByOrder;

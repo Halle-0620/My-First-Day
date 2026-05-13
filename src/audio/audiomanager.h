@@ -56,6 +56,7 @@ public:
     void stopSfx(const QString &audioId = QString());
     void playUi(const QString &audioId);
     void playEmo(const QString &audioId);
+    void stopEmo(const QString &audioId = QString());
     void stopAll(int fadeOutMs = 250);
 
 private:

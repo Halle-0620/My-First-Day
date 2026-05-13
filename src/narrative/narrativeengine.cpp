@@ -65,6 +65,17 @@ void NarrativeEngine::continueNarrative()
     if (hasActiveRuntimeShader()) {
         m_runtimeShaderEffect = ShaderEffect::None;
         m_runtimeShaderDurationMs = 0;
+        if (scene->requiresAllInteractions
+            && allRequiredInteractionsVisited(*scene)
+            && scene->completionText.isEmpty()
+            && scene->completionTextVariants.isEmpty()
+            && !scene->completionTextResolver) {
+            nextSceneId = resolvedCompletionNextSceneId(*scene);
+            if (!nextSceneId.isEmpty()) {
+                enterScene(nextSceneId);
+                return;
+            }
+        }
         emit stateChanged();
         return;
     }
@@ -107,6 +118,10 @@ void NarrativeEngine::handleInteraction(const QString &interactionId)
 
     const NarrativeInteraction *interaction = findInteraction(*scene, interactionId);
     if (!interaction) {
+        return;
+    }
+
+    if (!interaction->enabled) {
         return;
     }
 
@@ -477,7 +492,7 @@ InteractionItems NarrativeEngine::buildInteractionItems(const NarrativeScene &sc
             interaction.id,
             interaction.text,
             interaction.type,
-            !visited,
+            interaction.enabled && !visited,
             visited,
             false
         });

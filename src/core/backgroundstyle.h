@@ -4,6 +4,8 @@
 enum class BackgroundStyle {
     DeskDusk,
     DeskNight,
+    Beginning,
+    BeginningBlur,
     Hallway,
     TreeUnder,
     GymBack,
@@ -19,8 +21,12 @@ enum class BackgroundStyle {
     SoftNarration,
     NightRain,
     EndingGlow,
+    EndingWhite,
     EndingBlack,
     DreamDrift,
+    DreamFaraway,
+    DreamCompanion,
+    DreamCreation,
     Message1,
     Message2,
     Message3
