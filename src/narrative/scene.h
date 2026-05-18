@@ -3,6 +3,7 @@
 
 #include "../core/backgroundstyle.h"
 #include "../core/interactiontypes.h"
+#include "../core/shadereffect.h"
 
 #include <QHash>
 #include <QList>
@@ -56,10 +57,13 @@ struct NarrativeInteraction
     QString id;
     QString text;
     InteractionItemType type = InteractionItemType::Choice;
+    bool enabled = true;
     QString nextSceneId;
     QString feedbackText;
     QList<QString> feedbackTextsByOrder;
     QList<QList<QString>> feedbackSequencesByOrder;
+    ShaderEffect shaderEffect = ShaderEffect::None;
+    int shaderDurationMs = 0;
     QHash<QString, bool> boolWrites;
     QHash<QString, QString> stringWrites;
 };
@@ -92,6 +96,8 @@ struct NarrativeScene
     QList<ConditionalSceneLink> nextVariants;
     QList<ConditionalSceneLink> completionNextVariants;
     QList<ConditionalBackgroundVariant> backgroundVariants;
+    ShaderEffect shaderEffect = ShaderEffect::None;
+    int autoAdvanceDurationMs = 0;
     SceneTextResolver textResolver;
     SceneTextResolver completionTextResolver;
     SceneSpeakerResolver speakerResolver;

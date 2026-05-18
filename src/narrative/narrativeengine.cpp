@@ -14,6 +14,8 @@ void NarrativeEngine::loadScenes(const NarrativeSceneMap &scenes, const QString 
     m_currentSceneId.clear();
     m_gameState.clear();
     m_visitedInteractions.clear();
+    m_runtimeShaderEffect = ShaderEffect::None;
+    m_runtimeShaderDurationMs = 0;
     m_runtimeFeedbackText.clear();
     m_runtimeFeedbackFrames.clear();
     m_runtimeFeedbackIndex = -1;
@@ -60,6 +62,24 @@ void NarrativeEngine::continueNarrative()
         return;
     }
 
+    if (hasActiveRuntimeShader()) {
+        m_runtimeShaderEffect = ShaderEffect::None;
+        m_runtimeShaderDurationMs = 0;
+        if (scene->requiresAllInteractions
+            && allRequiredInteractionsVisited(*scene)
+            && scene->completionText.isEmpty()
+            && scene->completionTextVariants.isEmpty()
+            && !scene->completionTextResolver) {
+            nextSceneId = resolvedCompletionNextSceneId(*scene);
+            if (!nextSceneId.isEmpty()) {
+                enterScene(nextSceneId);
+                return;
+            }
+        }
+        emit stateChanged();
+        return;
+    }
+
     if (hasActiveSceneAutoFrame()) {
         if (m_sceneAutoIndex + 1 < m_sceneAutoFrames.size()) {
             ++m_sceneAutoIndex;
@@ -101,6 +121,10 @@ void NarrativeEngine::handleInteraction(const QString &interactionId)
         return;
     }
 
+    if (!interaction->enabled) {
+        return;
+    }
+
     if (scene->requiresAllInteractions && m_visitedInteractions.contains(interactionId)) {
         return;
     }
@@ -110,6 +134,12 @@ void NarrativeEngine::handleInteraction(const QString &interactionId)
     if (scene->requiresAllInteractions) {
         const int feedbackOrder = m_visitedInteractions.size();
         m_visitedInteractions.insert(interactionId);
+        if (interaction->shaderEffect != ShaderEffect::None && interaction->shaderDurationMs > 0) {
+            m_runtimeShaderEffect = interaction->shaderEffect;
+            m_runtimeShaderDurationMs = interaction->shaderDurationMs;
+            emit stateChanged();
+            return;
+        }
         if (interaction->feedbackSequencesByOrder.size() == 1
             && !interaction->feedbackSequencesByOrder.first().isEmpty()) {
             m_runtimeFeedbackFrames = interaction->feedbackSequencesByOrder.first();
@@ -143,6 +173,13 @@ void NarrativeEngine::handleInteraction(const QString &interactionId)
         return;
     }
 
+    if (interaction->shaderEffect != ShaderEffect::None && interaction->shaderDurationMs > 0) {
+        m_runtimeShaderEffect = interaction->shaderEffect;
+        m_runtimeShaderDurationMs = interaction->shaderDurationMs;
+        emit stateChanged();
+        return;
+    }
+
     if (!interaction->nextSceneId.isEmpty()) {
         enterScene(interaction->nextSceneId);
         return;
@@ -171,7 +208,23 @@ NarrativeViewState NarrativeEngine::currentViewState() const
     viewState.displayMode = scene->displayMode;
     viewState.interactionMode = scene->interactionMode;
     viewState.interactionItems = buildInteractionItems(*scene);
+    viewState.shaderEffect = scene->shaderEffect;
     viewState.showSpeaker = !viewState.speaker.trimmed().isEmpty();
+    viewState.autoAdvanceDurationMs = scene->autoAdvanceDurationMs;
+
+    if (hasActiveRuntimeShader()) {
+        viewState.displayMode = NarrativeDisplayMode::Performance;
+        viewState.speaker.clear();
+        viewState.text.clear();
+        viewState.interactionMode = InteractionMode::None;
+        viewState.interactionItems.clear();
+        viewState.shaderEffect = m_runtimeShaderEffect;
+        viewState.showSpeaker = false;
+        viewState.showContinue = false;
+        viewState.autoAdvance = true;
+        viewState.autoAdvanceDurationMs = m_runtimeShaderDurationMs;
+        return viewState;
+    }
 
     if (hasActiveRuntimeFeedback()) {
         QString frameText = m_runtimeFeedbackFrames.at(m_runtimeFeedbackIndex);
@@ -190,6 +243,7 @@ NarrativeViewState NarrativeEngine::currentViewState() const
         viewState.interactionItems.clear();
         viewState.showContinue = false;
         viewState.autoAdvance = true;
+        viewState.autoAdvanceDurationMs = 0;
         return viewState;
     }
 
@@ -211,6 +265,7 @@ NarrativeViewState NarrativeEngine::currentViewState() const
         viewState.showContinue = false;
         viewState.autoAdvance = !resolvedNextSceneId(*scene).isEmpty()
             || m_sceneAutoIndex + 1 < m_sceneAutoFrames.size();
+        viewState.autoAdvanceDurationMs = 0;
         return viewState;
     }
 
@@ -225,6 +280,10 @@ NarrativeViewState NarrativeEngine::currentViewState() const
         viewState.showContinue = false;
     } else {
         viewState.showContinue = !resolvedNextSceneId(*scene).isEmpty();
+    }
+
+    if (scene->autoAdvanceDurationMs > 0 && !resolvedNextSceneId(*scene).isEmpty()) {
+        viewState.autoAdvance = true;
     }
 
     return viewState;
@@ -270,6 +329,8 @@ void NarrativeEngine::enterScene(const QString &sceneId)
 
     m_currentSceneId = sceneId;
     m_visitedInteractions.clear();
+    m_runtimeShaderEffect = ShaderEffect::None;
+    m_runtimeShaderDurationMs = 0;
     m_runtimeFeedbackText.clear();
     m_runtimeFeedbackFrames.clear();
     m_runtimeFeedbackIndex = -1;
@@ -431,7 +492,7 @@ InteractionItems NarrativeEngine::buildInteractionItems(const NarrativeScene &sc
             interaction.id,
             interaction.text,
             interaction.type,
-            !visited,
+            interaction.enabled && !visited,
             visited,
             false
         });
@@ -453,6 +514,11 @@ bool NarrativeEngine::allRequiredInteractionsVisited(const NarrativeScene &scene
     }
 
     return true;
+}
+
+bool NarrativeEngine::hasActiveRuntimeShader() const
+{
+    return m_runtimeShaderEffect != ShaderEffect::None && m_runtimeShaderDurationMs > 0;
 }
 
 bool NarrativeEngine::hasActiveRuntimeFeedback() const

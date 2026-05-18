@@ -301,10 +301,6 @@ QString MockFlowController::objectFeedbackText(const QString &id) const
         return QStringLiteral("你点了“雨”。对象式交互会给很短的反馈，更像摸到画面里的一个点。");
     }
 
-    if (id == QStringLiteral("object_back")) {
-        return QStringLiteral("你点了“他的背影”。这里故意不做传统选项框感，而是让对象像画面中的可点词。");
-    }
-
     return QStringLiteral("你点了“路灯”。已点过的对象会变灰，直到这一组都点完。");
 }
 
@@ -342,11 +338,6 @@ InteractionItems MockFlowController::buildObjectItems() const
                  InteractionItemType::Object,
                  !m_visitedObjects.contains(QStringLiteral("object_rain")),
                  m_visitedObjects.contains(QStringLiteral("object_rain"))),
-        makeItem(QStringLiteral("object_back"),
-                 QStringLiteral("他的背影"),
-                 InteractionItemType::Object,
-                 !m_visitedObjects.contains(QStringLiteral("object_back")),
-                 m_visitedObjects.contains(QStringLiteral("object_back"))),
         makeItem(QStringLiteral("object_light"),
                  QStringLiteral("路灯"),
                  InteractionItemType::Object,

@@ -19,9 +19,11 @@ struct NarrativeViewState
     NarrativeDisplayMode displayMode = NarrativeDisplayMode::Narration;
     InteractionMode interactionMode = InteractionMode::None;
     InteractionItems interactionItems;
+    ShaderEffect shaderEffect = ShaderEffect::None;
     bool showSpeaker = false;
     bool showContinue = false;
     bool autoAdvance = false;
+    int autoAdvanceDurationMs = 0;
 };
 
 class NarrativeEngine : public QObject
@@ -56,6 +58,7 @@ private:
     BackgroundStyle resolvedBackgroundStyle(const NarrativeScene &scene) const;
     InteractionItems buildInteractionItems(const NarrativeScene &scene) const;
     bool allRequiredInteractionsVisited(const NarrativeScene &scene) const;
+    bool hasActiveRuntimeShader() const;
     bool hasActiveRuntimeFeedback() const;
     bool hasActiveSceneAutoFrame() const;
     QString resolvedPrimaryText(const NarrativeScene &scene) const;
@@ -67,6 +70,8 @@ private:
     QString m_currentSceneId;
     GameState m_gameState;
     QSet<QString> m_visitedInteractions;
+    ShaderEffect m_runtimeShaderEffect = ShaderEffect::None;
+    int m_runtimeShaderDurationMs = 0;
     QString m_runtimeFeedbackText;
     QList<QString> m_runtimeFeedbackFrames;
     int m_runtimeFeedbackIndex = -1;
